@@ -1,0 +1,696 @@
+<!doctype html>
+<html lang="hi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta name="theme-color" content="#030914">
+<title>HoloModel | J.A.R.V.I.S. 3D Lab — Ultimate Edition</title>
+<style>
+:root{--bg:#030914;--panel:#071729;--cyan:#19d9ff;--blue:#1686ff;--orange:#ff8a35;--text:#e4f7ff;--muted:#8caec7;--line:#174d70}
+*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;background:var(--bg);color:var(--text);font:14px Arial,sans-serif}
+body{overflow:hidden}button,input{font:inherit}button{background:#0a2540;color:var(--text);border:1px solid #17668b;border-radius:9px;padding:10px 12px;cursor:pointer;touch-action:manipulation}button:active,button.active{background:#07537a;border-color:var(--cyan)}button:disabled{opacity:.55}
+header{height:60px;display:flex;align-items:center;justify-content:space-between;padding:8px 14px;border-bottom:1px solid var(--line);background:#051221;gap:10px}
+.logo{font-size:22px;font-weight:bold;color:var(--cyan)}.logo small{display:block;font-size:10px;color:var(--muted);letter-spacing:2px;margin-top:3px}.status{color:#50ffbc;font-size:12px;text-align:right}
+.layout{height:calc(100dvh - 60px);display:grid;grid-template-columns:185px minmax(0,1fr) 205px;gap:8px;padding:8px;min-height:0}
+.panel{min-height:0;overflow:auto;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:10px}h3{font-size:14px;margin:2px 0 12px;color:var(--cyan)}.muted{color:var(--muted);font-size:12px;line-height:1.5}
+.library button{width:100%;text-align:left;margin-bottom:7px}.center{display:flex;flex-direction:column;min-width:0;min-height:0;gap:10px}
+.toolbar{display:flex;gap:11px;row-gap:10px;flex-wrap:wrap;align-items:center;justify-content:flex-start;background:#071729;border:1px solid var(--line);padding:10px;border-radius:10px}.toolbar button{padding:8px 10px}#advancedToolbar{max-height:none;overflow:visible;align-content:flex-start;column-gap:12px;row-gap:11px}#advancedToolbar input{min-width:65px}#advancedToolbar label{font-size:11px} .simReadout{color:#9beeff;font-size:11px;padding:3px 5px}
+#stage{position:relative;flex:1;min-height:200px;overflow:hidden;border:1px solid #14577b;border-radius:12px;background:radial-gradient(ellipse at center,#092647 0%,#030914 72%);touch-action:none}
+#stage canvas{display:block;width:100%;height:100%;touch-action:none}#stageTitle{position:absolute;top:12px;left:12px;pointer-events:none;text-shadow:0 0 12px #00bfff;font-weight:bold;font-size:17px}
+#stageInfo{position:absolute;bottom:12px;left:12px;padding:8px 10px;border:1px solid #126184;border-radius:8px;background:#031322d9;pointer-events:none;max-width:80%;font-size:12px}
+#loading{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:10px;background:#030914;z-index:5;color:var(--cyan);text-align:center;padding:18px}
+.spinner{width:34px;height:34px;border:3px solid #12354b;border-top-color:var(--cyan);border-radius:50%;animation:spin 1s linear infinite}@keyframes spin{to{transform:rotate(360deg)}}
+.infoBox{background:#04101e;border:1px solid #15435f;border-radius:8px;padding:9px;margin-bottom:9px}.infoBox b{color:var(--cyan)}#jarvisText{white-space:pre-wrap;line-height:1.5;font-size:12px}
+#handStatus{font-size:12px;color:var(--orange);margin:8px 0;line-height:1.4}#cameraWrap{position:relative;width:100%;display:none;border-radius:8px;overflow:hidden;background:#020812}#cameraPreview{width:100%;height:125px;object-fit:cover;transform:scaleX(-1);border-radius:8px;background:#020812;display:block}#handOverlay{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+#handPanel{width:100%;min-width:0}#handPanel #cameraWrap{max-width:100%;margin-top:7px}#handPanel #cameraPreview{height:clamp(130px,22vw,190px)}#handPanel #handStatus{overflow-wrap:anywhere}
+#chatInput{width:100%;background:#03101d;color:white;border:1px solid var(--line);padding:10px;border-radius:8px}.controls{display:grid;grid-template-columns:1fr 1fr;gap:6px}.controls button{font-size:12px;padding:10px 5px}
+footer{padding:5px 10px;text-align:center;font-size:10px;color:var(--muted);border-top:1px solid #12324a}
+#mobileProjects{display:none}
+/* Responsive layout fix: keep every toolbar in normal document flow so rows never overlap. */
+.toolbar{min-width:0;gap:11px;row-gap:10px;align-items:center;justify-content:flex-start}
+.toolbar button{flex:0 0 auto;white-space:normal;max-width:100%}
+#advancedToolbar{height:auto;max-height:none;overflow:visible;align-content:flex-start;justify-content:flex-start;column-gap:12px;row-gap:11px}
+@media(max-width:1000px){
+ header{height:54px;padding:6px 10px}.logo{font-size:18px}
+ body{overflow:auto}
+ .layout{height:auto;min-height:calc(100dvh - 54px);display:flex;flex-direction:column;gap:10px;overflow:visible;padding:6px}
+ .leftPanel{display:none}
+ .center{display:flex;flex:0 0 auto;width:100%;min-height:0;gap:10px}
+ #mobileProjects{display:flex;overflow-x:auto;overflow-y:hidden;flex-wrap:nowrap;gap:10px;max-width:100%;scrollbar-width:thin}
+ #mobileProjects button{white-space:nowrap;flex:0 0 auto}
+ .center>.toolbar:not(#mobileProjects){display:flex;flex-wrap:wrap;align-items:center;gap:11px;row-gap:10px;max-width:100%;height:auto}
+ #advancedToolbar{display:flex;flex-wrap:wrap;max-width:100%;height:auto;max-height:none;overflow:visible;align-items:center;gap:11px;row-gap:10px}
+ #stage{flex:0 0 auto;width:100%;height:42vh;min-height:240px;max-height:480px}
+ .rightPanel{display:flex;flex-direction:column;gap:8px;width:100%;max-height:none;overflow:visible;min-width:0}
+ .rightPanel h3{margin-bottom:4px}.rightPanel .infoBox{margin:0;width:100%;min-width:0}.rightPanel .controls{display:grid;grid-template-columns:1fr 1fr;gap:8px;width:100%}.rightPanel>div:last-child{width:100%;min-width:0}
+ footer{display:none}
+}
+@media(min-width:1001px){.layout{grid-template-columns:185px minmax(0,1fr) 205px}.center,.rightPanel,.leftPanel{min-width:0}.toolbar{row-gap:10px}}
+
+
+/* MODEL VISIBILITY FIX: keep the transparent Three.js canvas above the live camera feed. */
+#stage{position:relative;isolation:isolate;overflow:hidden;min-height:290px;background:#071019}
+#stage>video#stageCamera{z-index:0}
+#stage>canvas{position:absolute!important;inset:0!important;width:100%!important;height:100%!important;z-index:1!important;background:transparent!important}
+#stage>#stageHandOverlay{z-index:2!important}
+#stage>#loading{z-index:10}
+#stage>#stageTitle,#stage>#stageInfo,#stage>#partCallouts{z-index:5}
+/* FUTURISTIC VISUAL POLISH — presentation only; preserve existing controls and dimensions */
+:root{--bg:#020711;--panel:rgba(5,19,35,.96);--cyan:#27e4ff;--blue:#1686ff;--text:#e7faff;--muted:#91b8d0;--line:#176080}
+body{background:radial-gradient(ellipse at 50% 0%,rgba(0,125,190,.16),transparent 48%),#020711}
+header{background:linear-gradient(100deg,rgba(4,19,34,.98),rgba(5,32,52,.96),rgba(3,13,26,.98));box-shadow:0 1px 0 rgba(39,228,255,.12),0 8px 30px rgba(0,0,0,.22)}
+.logo{text-shadow:0 0 16px rgba(39,228,255,.38);letter-spacing:.3px}
+.logo small{text-shadow:none}
+.status{ text-shadow:0 0 10px rgba(80,255,188,.3)}
+.panel,.infoBox,.toolbar{box-shadow:inset 0 1px 0 rgba(190,245,255,.035),0 8px 22px rgba(0,0,0,.13)}
+.panel{background:linear-gradient(155deg,rgba(8,28,47,.97),rgba(3,13,26,.98));border-color:rgba(39,185,231,.32)}
+h3,.infoBox b{ text-shadow:0 0 12px rgba(25,217,255,.18)}
+button{transition:background-color .16s ease,border-color .16s ease,box-shadow .16s ease,filter .16s ease;background:linear-gradient(180deg,rgba(12,45,72,.98),rgba(5,28,49,.98));border-color:rgba(35,154,201,.56);box-shadow:inset 0 1px 0 rgba(185,240,255,.055)}
+button:hover{border-color:rgba(39,228,255,.9);box-shadow:0 0 0 1px rgba(39,228,255,.08),0 0 14px rgba(25,180,255,.12);filter:brightness(1.08)}
+button.active,button:active{background:linear-gradient(180deg,#08658a,#073b60);border-color:var(--cyan);box-shadow:inset 0 0 12px rgba(39,228,255,.12),0 0 13px rgba(25,217,255,.16)}
+#stage{isolation:isolate;background:#071019;border-color:rgba(39,217,255,.42);box-shadow:inset 0 0 24px rgba(0,133,210,.08),0 0 18px rgba(0,125,190,.08)}
+#stage::before,#stage::after{display:none!important}
+#stageCamera{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;transform:scaleX(-1);z-index:0;display:none;opacity:.72;background:#071019;pointer-events:none}
+#stage canvas{position:absolute!important;inset:0;width:100%!important;height:100%!important;display:block;z-index:1;background:transparent!important;pointer-events:auto}
+#stageHandOverlay{position:absolute;inset:0;width:100%;height:100%;z-index:2;pointer-events:none}
+#stageTitle,#stageInfo,#partCallouts{z-index:4}
+#stageTitle,#stageInfo{z-index:4}
+#stageTitle{letter-spacing:1.5px;color:#bdf7ff;text-shadow:0 0 7px rgba(39,228,255,.8),0 0 22px rgba(0,160,255,.3)}
+#stageInfo{border-color:rgba(39,217,255,.48);box-shadow:0 0 18px rgba(0,140,210,.08);backdrop-filter:blur(8px)}
+.infoBox{background:linear-gradient(145deg,rgba(4,21,36,.98),rgba(3,14,26,.98));border-color:rgba(32,137,179,.42)}
+.toolbar{background:linear-gradient(110deg,rgba(5,22,38,.97),rgba(7,27,45,.97));border-color:rgba(32,137,179,.38)}
+#loading{background:radial-gradient(ellipse at center,rgba(5,46,75,.98),#020711 70%)}
+.spinner{box-shadow:0 0 18px rgba(39,228,255,.2)}
+#cameraWrap{border:1px solid rgba(39,228,255,.55);box-shadow:0 0 16px rgba(0,163,255,.1)}
+#handStatus{padding:5px 7px;border-left:2px solid var(--cyan);background:rgba(15,92,125,.1)}
+#chatInput{background:rgba(2,13,25,.96);outline:none}#chatInput:focus{border-color:var(--cyan);box-shadow:0 0 0 2px rgba(39,228,255,.09)}
+@keyframes holoscan{0%{top:-25%}100%{top:110%}}
+@media(prefers-reduced-motion:reduce){#stage::after{animation:none}button{transition:none}}
+
+
+/* STARK LAB UPGRADE: denser workspace + live component intelligence */
+.stageWrap{display:block;flex:1;min-height:290px;min-width:0;align-items:stretch}
+#stage{min-height:290px;height:100%;width:100%}
+#componentDock,#partDetailDock{display:none!important}
+#partCallouts{position:absolute;inset:0;z-index:4;pointer-events:none;overflow:hidden}
+#partCalloutLines{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
+.partCallout{position:absolute;max-width:clamp(68px,19%,118px);min-width:64px;padding:5px 6px;border:1px solid rgba(39,228,255,.78);border-radius:7px;background:rgba(2,17,31,.94);box-shadow:0 0 12px rgba(0,184,255,.17);color:#dffaff;transform:translate(-50%,-50%);pointer-events:auto;text-align:center;backdrop-filter:blur(5px);font-size:10px;line-height:1.2;overflow-wrap:anywhere}
+.partCallout strong{display:block;color:#43e8ff;font-size:10px;font-weight:700;margin:0;line-height:1.25}
+.partCallout span{display:none!important}
+.partCallout.selected{border-color:#fff;box-shadow:0 0 0 1px #27e4ff,0 0 20px rgba(39,228,255,.4)}
+.partCallout .calloutDot{position:absolute;width:5px;height:5px;background:#53efff;border-radius:50%;box-shadow:0 0 9px #27e4ff}
+#componentDock{min-width:0;overflow:auto;border:1px solid rgba(39,217,255,.38);border-radius:12px;padding:10px;background:linear-gradient(160deg,rgba(7,30,49,.98),rgba(2,12,24,.98));box-shadow:inset 0 0 20px rgba(0,145,220,.05)}
+.dockKicker{font-size:10px;letter-spacing:1.5px;color:#74dfff;margin-bottom:7px}
+#dockPartName{font-size:13px;font-weight:bold;color:#bdf7ff;line-height:1.35;text-shadow:0 0 10px rgba(39,228,255,.2)}
+#dockPartDesc{font-size:11px;line-height:1.45;color:#9dbbd0;margin:6px 0 9px}
+.dockMetric{display:flex;justify-content:space-between;gap:8px;border-top:1px solid rgba(39,217,255,.13);padding:6px 0;font-size:10px;color:#8fb5cc}
+.dockMetric strong{color:#48e4ff;font-weight:600;text-align:right}
+#componentList{display:flex;flex-direction:column;gap:5px;margin-top:7px}
+#componentList button{font-size:10px;text-align:left;padding:6px 7px;min-width:0;overflow-wrap:anywhere;border-radius:6px}
+#componentList button.selected{border-color:#35e5ff;background:rgba(0,137,190,.24);box-shadow:0 0 10px rgba(0,190,255,.12)}
+.labStrip{display:flex;flex-wrap:wrap;gap:6px;align-items:center;color:#83b5ce;font-size:10px}
+.labStrip span{border:1px solid rgba(39,217,255,.2);border-radius:5px;padding:4px 6px;background:rgba(6,36,58,.65)}
+/* SIDE-BY-SIDE MODEL INTELLIGENCE: details and component map flank the model */
+#partDetailDock{min-width:0;overflow:auto;border:1px solid rgba(39,217,255,.38);border-radius:12px;padding:10px;background:linear-gradient(160deg,rgba(7,30,49,.98),rgba(2,12,24,.98));box-shadow:inset 0 0 20px rgba(0,145,220,.05)}
+#sidePartName{font-size:14px;font-weight:bold;color:#bdf7ff;line-height:1.35;text-shadow:0 0 10px rgba(39,228,255,.2)}
+#sidePartDesc{font-size:11px;line-height:1.5;color:#9dbbd0;margin:7px 0 10px;overflow-wrap:anywhere}
+.sideReadout{border-top:1px solid rgba(39,217,255,.15);padding:7px 0;color:#8fb5cc;font-size:10px;line-height:1.4}
+.sideReadout strong{display:block;color:#48e4ff;font-size:11px;margin-top:3px}
+@media(max-width:1000px){
+ .stageWrap{display:block;flex:0 0 auto;min-height:250px;align-items:stretch}
+ .stageWrap #stage{width:100%;height:clamp(300px,48vh,520px);min-height:300px;max-height:520px;flex:none;padding:0}
+ .stageWrap #componentDock,.stageWrap #partDetailDock{display:none!important}
+ .stageWrap #componentList{display:flex;flex-direction:column;gap:5px}
+ .stageWrap #componentList button{font-size:10px;padding:6px 5px;line-height:1.25}
+ .dockKicker{font-size:8px;letter-spacing:.5px;overflow-wrap:anywhere}
+ #dockPartName,#sidePartName{font-size:11px}#dockPartDesc,#sidePartDesc{font-size:9px;line-height:1.35}
+ .dockMetric{padding:5px 0;font-size:8px;flex-wrap:wrap;gap:3px}.sideReadout{font-size:9px;padding:5px 0}.sideReadout strong{font-size:10px}
+ .dockMetric strong{text-align:left;overflow-wrap:anywhere}
+}
+@media(max-width:360px){.stageWrap #stage{height:300px;min-height:300px}.partCallout{min-width:54px;max-width:68px;padding:4px 4px;font-size:9px}.partCallout strong{font-size:9px}}
+@media(min-width:1001px){.stageWrap #stage{height:100%;min-height:360px}}
+
+
+/* MICRO-DETAIL ASSEMBLY MODULE — additive; existing lab controls retained */
+#microTwinPanel{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr);gap:10px;background:linear-gradient(145deg,rgba(5,24,41,.98),rgba(2,12,23,.98));border:1px solid rgba(39,217,255,.38);border-radius:12px;padding:10px;min-width:0}
+#microTwinPanel .twinPane{min-width:0;max-height:245px;overflow:auto;border:1px solid rgba(39,217,255,.15);border-radius:8px;padding:8px;background:rgba(2,12,23,.5)}
+.twinHeading{color:#56e8ff;font-weight:bold;font-size:11px;letter-spacing:1px;margin:0 0 8px}
+#twinSearch{width:100%;padding:9px;border-radius:7px;border:1px solid #176080;background:#020d19;color:#e7faff;margin-bottom:7px}
+#twinTree{display:flex;flex-direction:column;gap:4px}
+#twinTree button{font-size:11px;text-align:left;padding:7px;overflow-wrap:anywhere;line-height:1.3}
+#twinTree button.twinCategory{color:#6cecff;background:#082039}
+#twinTree button.twinPart{margin-left:10px;font-size:10px;background:#061729}
+#twinTree button.selected{border-color:#fff;box-shadow:0 0 0 1px #27e4ff,0 0 12px #087aa8}
+#twinInfo{font-size:11px;line-height:1.5;color:#a7c8db;white-space:pre-wrap;overflow-wrap:anywhere}
+#twinInfo strong{color:#55eaff}
+.twinActions{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}.twinActions button{font-size:10px;padding:7px}
+.twinNotice{color:#8fb5cc;font-size:10px;line-height:1.4;margin-top:7px}
+@media(max-width:1000px){#microTwinPanel{grid-template-columns:1fr;gap:8px}#microTwinPanel .twinPane{max-height:190px}.stageWrap{flex:0 0 auto}}
+
+
+/* UNIVERSAL MODEL SEARCH — additive module; no existing controls removed */
+#universalSearchPanel{margin:12px 0;padding:12px;border:1px solid rgba(39,217,255,.42);border-radius:12px;background:linear-gradient(145deg,rgba(3,23,40,.96),rgba(2,10,22,.98));min-width:0}
+#universalSearchPanel .umsTitle{color:#59eaff;font-size:12px;font-weight:800;letter-spacing:1px;margin-bottom:6px}
+#universalSearchPanel .umsHint{font-size:10px;line-height:1.45;color:#9bbcd0;margin:5px 0 9px}
+#umsSearchRow,#umsUrlRow{display:flex;gap:6px;align-items:stretch;flex-wrap:wrap;margin:6px 0}
+#umsSearch,#umsUrl{flex:1 1 170px;min-width:0;padding:10px;border-radius:7px;border:1px solid #176080;background:#020d19;color:#e7faff;font-size:12px}
+#umsResults{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,190px),1fr));gap:7px;margin-top:9px}
+.umsCard{border:1px solid rgba(39,217,255,.22);border-radius:8px;padding:8px;background:rgba(3,18,31,.9);min-width:0}
+.umsCard strong{display:block;color:#d7f8ff;font-size:11px;overflow-wrap:anywhere;margin-bottom:4px}
+.umsCard small{display:block;color:#8eb7cc;font-size:9px;line-height:1.4;overflow-wrap:anywhere;margin-bottom:7px}
+.umsCard .umsBtns{display:flex;gap:5px;flex-wrap:wrap}.umsCard button{font-size:10px;padding:6px}
+#umsStatus{font-size:10px;color:#9cefff;min-height:16px;margin-top:6px;white-space:pre-wrap;overflow-wrap:anywhere}
+@media(max-width:420px){#universalSearchPanel{padding:8px}#umsResults{grid-template-columns:1fr}.umsCard button{flex:1}}
+
+</style>
+<script type="importmap">
+{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js"}}
+</script>
+</head>
+<body>
+<header><div class="logo">⬡ HoloModel<small>J.A.R.V.I.S. • 3D LAB</small></div><div class="status" id="connection">● Starting…</div></header>
+<div class="layout">
+<aside class="panel library leftPanel"><h3>MODEL LIBRARY</h3><p class="muted">अपना 3D मॉडल चुनें</p>
+<button data-model="reactor">⚡ Arc Reactor MK-III</button><button data-model="robot">🤖 Robot Core</button><button data-model="jet">✈ Jet Engine</button><button data-model="earth">🌍 Digital Earth</button><button data-model="dna">🧬 DNA Helix</button><button data-model="space">🪐 Space Mission</button><button data-model="gravity">🌀 Gravity Lab</button><button data-model="molecule">⚛ Molecular Chamber</button>
+<div class="infoBox"><b>Controls</b><p class="muted">Drag: Rotate<br>Pinch: Zoom<br>Tap part: Details<br>Hand: Move to rotate, pinch to zoom</p></div></aside>
+<main class="center">
+<div class="toolbar" id="mobileProjects"><button data-model="reactor">⚡ Reactor</button><button data-model="robot">🤖 Robot</button><button data-model="jet">✈ Jet</button><button data-model="earth">🌍 Earth</button><button data-model="dna">🧬 DNA</button><button data-model="space">🪐 Space</button><button data-model="gravity">🌀 Gravity</button><button data-model="molecule">⚛ Molecule</button></div>
+<div class="toolbar"><button id="rotateBtn" class="active">⟳ Rotate</button><button id="explodeBtn">Explode</button><button id="wireBtn">Wireframe</button><button id="xrayBtn">X-Ray</button><button id="resetBtn">Reset</button></div>
+<div class="stageWrap">
+<aside id="partDetailDock" aria-live="polite"><div class="dockKicker">STARK INDUSTRIES // PART INTEL</div><div id="sidePartName">POWER CORE</div><p id="sidePartDesc">Select a component in the model or component map to view its function here.</p><div class="sideReadout">COMPONENT STATUS<strong id="sidePartStatus">READY FOR INSPECTION</strong></div><div class="sideReadout">SELECTED MODEL<strong id="sidePartModel">ARC REACTOR</strong></div><div class="sideReadout">J.A.R.V.I.S. NOTE<strong id="sidePartTip">Tap any component to analyze it.</strong></div><div class="labStrip" style="margin-top:9px"><span>● PART INTEL</span></div></aside>
+<div id="stage"><video id="stageCamera" autoplay playsinline muted aria-label="Live camera background"></video><canvas id="stageHandOverlay" aria-hidden="true"></canvas><div id="loading"><div class="spinner"></div><b id="loadingTitle">Initializing 3D Lab…</b><span class="muted" id="loadingMsg">Loading Three.js engine</span></div><div id="stageTitle">ARC REACTOR MK-III</div><div id="stageInfo">Drag to rotate • Tap a glowing part label for information</div><div id="partCallouts" aria-label="3D model part information"><svg id="partCalloutLines" aria-hidden="true"></svg></div></div>
+<aside id="componentDock" aria-live="polite"><div class="dockKicker">STARK INDUSTRIES // LIVE ANALYSIS</div><div id="dockPartName">POWER CORE</div><p id="dockPartDesc">Select a glowing model component to inspect its function.</p><div class="dockMetric"><span>ACTIVE MODEL</span><strong id="dockModel">ARC REACTOR</strong></div><div class="dockMetric"><span>PARTS FOUND</span><strong id="dockCount">—</strong></div><div class="dockMetric"><span>VIEW MODE</span><strong id="dockMode">SOLID</strong></div><div class="dockKicker" style="margin-top:9px">COMPONENT MAP</div><div id="componentList"><span class="muted">Loading components…</span></div><div class="labStrip" style="margin-top:9px"><span>● LIVE</span><span>3D ANALYSIS</span></div></aside>
+</div>
+
+<section id="microTwinPanel" aria-label="Micro-detail assembly inspector">
+ <div class="twinPane"><div class="twinHeading">⬡ COMPONENT HIERARCHY</div>
+  <input id="twinSearch" type="search" placeholder="Search screws, coils, joints, wires…" aria-label="Search components">
+  <div id="twinTree"><span class="muted">3D model load hone par component tree yahan aayega.</span></div>
+  <div class="twinActions"><button id="twinShowAll">Show All Parts</button><button id="twinIsolate">Isolate Selected</button><button id="twinRestore">Restore Assembly</button></div>
+ </div>
+ <div class="twinPane"><div class="twinHeading">◈ SELECTED PART INTEL</div><div id="twinInfo"><strong>READY</strong>
+Select any mesh in the 3D model or choose a part from the hierarchy.</div>
+  <div class="twinNotice">Part instances are individual mesh objects in this demo. Names and dimensions are illustrative unless sourced from verified CAD/engineering data. This module does not invent hidden internals for a real object.</div>
+ </div>
+</section>
+
+<section id="universalSearchPanel" aria-label="Universal 3D model search">
+ <div class="umsTitle">🌐 UNIVERSAL MODEL SEARCH // GLB • GLTF</div>
+ <div class="umsHint">Public GitHub asset search (no API key) + direct GLB/GLTF URL loader. Search results depend on public repositories, file availability, licence and CORS. GLB is usually the most reliable format on mobile.</div>
+ <div id="umsSearchRow"><input id="umsSearch" type="search" placeholder="Search: robot arm, engine, satellite…" aria-label="Search online 3D models"><button id="umsSearchBtn" type="button">Search Models</button></div>
+ <div id="umsUrlRow"><input id="umsUrl" type="url" inputmode="url" placeholder="Paste direct https://… .glb or .gltf URL" aria-label="Direct model URL"><button id="umsUrlLoad" type="button">Load URL</button></div>
+ <div class="twinActions"><button id="umsOpenSketchfab" type="button">Search Sketchfab ↗</button><button id="umsClearOnline" type="button">Clear Loaded Online Models</button></div>
+ <div id="umsStatus" role="status" aria-live="polite">Ready. Search to find multiple public GLB/GLTF files, then Load or Add to Scene.</div>
+ <div id="umsResults"></div>
+</section>
+
+<div class="infoBox" id="handPanel"><b>✋ Hand Tracking & Camera</b><div id="handStatus" role="status" aria-live="polite">Not started</div><div id="cameraWrap"><video id="cameraPreview" autoplay playsinline muted></video><canvas id="handOverlay"></canvas></div><p class="muted">Camera preview and finger tracking appear here. Allow camera permission when prompted.</p></div>
+<div class="toolbar"><button id="zoomIn">＋ Zoom</button><button id="zoomOut">－ Zoom</button><button id="handBtn">✋ Start Hand Tracking</button><button id="voiceBtn">🔊 Explain Model</button><button id="wakeBtn">🎙 Wake Up JARVIS</button></div>
+<div class="toolbar" id="advancedToolbar"><button id="moveModeBtn">↔ Move Model</button><button id="scaleDownBtn">－ Model Size</button><button id="scaleUpBtn">＋ Model Size</button><button id="earthLayersBtn">🌐 Earth Layers</button><button id="missionBtn">🚀 Mission View</button><button id="gravityBtn">🌀 Gravity Demo</button><button id="labBuilderBtn">🧪 Lab Builder</button><button id="saveLayoutBtn">💾 Save Layout</button><button id="loadLayoutBtn">↩ Load Layout</button><button id="presentBtn">⛶ Presentation</button><button id="shotBtn">📸 Screenshot</button><button id="scanBtn">🔎 Smart Scan</button><button id="reportBtn">📄 Lab Report</button><label class="muted" for="rpmSlider">Engine RPM</label><input id="rpmSlider" type="range" min="0" max="100" value="55" style="width:90px;accent-color:#19d9ff"><label class="muted" for="massSlider">Gravity</label><input id="massSlider" type="range" min="1" max="10" value="5" style="width:70px;accent-color:#19d9ff"></div>
+</main>
+<aside class="panel rightPanel"><h3>J.A.R.V.I.S. SYSTEM</h3>
+<div class="infoBox"><b id="partName">Arc Reactor</b><p class="muted" id="partDesc">Energy core visualization.</p></div>
+<div class="infoBox"><b>AI Guide</b><p id="jarvisText">Hello! I am J.A.R.V.I.S. Select a model and I will explain its parts.</p></div>
+<div class="controls"><button id="allBtn">Explain All</button><button id="stopVoice">Stop Voice</button></div>
+
+<div><input id="chatInput" placeholder="Ask JARVIS: what is the core?"><button id="askBtn" style="width:100%;margin-top:6px">Ask J.A.R.V.I.S.</button></div>
+</aside></div>
+<footer>ULTIMATE 3D LAB • Two-Hand Tracking • Voice Commands • Simulations • Smart Scan • Reports • Android Chrome</footer>
+<script type="module">
+const $=id=>document.getElementById(id);
+let GLTFLoaderClass=null;
+const umsResultsCache=new Map();
+const umsLoadedGroups=[];
+const stage=$("stage");
+let THREE,scene,camera,renderer,root,modelGroup,raycaster,pointer;
+let currentModel="reactor",autoRotate=true,exploded=false,wire=false,xray=false,dragging=false;
+let cameraDistance=7.5,preExplodeCameraDistance=7.5,lastX=0,lastY=0,downX=0,downY=0,moved=false;
+let handEnabled=false,handStream=null,handLandmarker=null,handRaf=0,lastVideoTime=-1,lastDetectAt=0,previousPalm=null,smoothedPalm=null,previousPinch=null,smoothedPinch=null,pinchActive=false,handBusy=false;
+let targetRotX=0,targetRotY=0,smoothRotX=0,smoothRotY=0,voiceRecognition=null,voiceEnabled=false,wakePulse=0;
+let targetMoveX=0,targetMoveY=0,smoothMoveX=0,smoothMoveY=0,lastAnimTime=0;
+let previousHandSpan=null,smoothedHandSpan=null,previousTwoHandMid=null,gestureZoomStartSpan=null,gestureZoomStartDistance=7.5,gestureZoomMode="";
+let earthLayersOn=true,labBuilderOn=false,engineRPM=55,gravityMass=5,missionMode=false;
+let modelMoveMode=false;
+const partDetails={
+"Power Core":"Glowing central component. This is a fictional science-fiction visualization, not a real unlimited-energy source.",
+"Outer Ring":"Concentric structural rings provide the layered mechanical look.",
+"Copper Coil":"Copper-like windings represent conceptual electromagnetic components.",
+"Cooling Ring":"A conceptual ring representing thermal management.",
+"Turbine Blade":"Turbine blades rotate to move air through a jet engine.",
+"Robot Joint":"A conceptual mechanical joint connecting sections of the robot.",
+"Digital Earth":"A stylized globe. This demo does not include live satellite data.",
+"DNA Strand":"A simplified educational double-helix model of DNA.",
+"Robot Arm":"A conceptual robotic arm segment.","Jet Housing":"The outer casing of a jet engine.","Planet":"A planet shown for space exploration; orbit scale is illustrative.","Orbit Path":"A visual guide to the planet's orbit, not a live ephemeris.","Space-Time Grid":"A simplified visualization of how mass can be represented as curvature; not a numerical relativity solver.","Molecule Atom":"A conceptual atom marker in an educational molecular visualization.","Molecular Bond":"A conceptual bond connecting atoms in a simplified molecular model."
+};
+function setStatus(text,color="#50ffbc"){$("connection").textContent="● "+text;$("connection").style.color=color}
+function showError(title,msg){$("loading").style.display="flex";$("loadingTitle").textContent=title;$("loadingMsg").textContent=msg+" • Tap here to retry";$("loading").style.cursor="pointer";$("loading").onclick=()=>location.reload();setStatus("Load Error","#ff8a35")}
+function mat(color,metalness=.55,roughness=.3,emissive=0x001322){return new THREE.MeshStandardMaterial({color,metalness,roughness,emissive,emissiveIntensity:.65})}
+function mesh(geo,material,name,pos=[0,0,0]){const m=new THREE.Mesh(geo,material);m.name=name;m.userData.twinCategory=name;m.userData.twinLabel=name+" • "+String(++twinPartCounter).padStart(3,"0");m.userData.twinId="part-"+twinPartCounter;m.position.set(...pos);modelGroup.add(m);return m}
+function ring(r,t,z,c,n,seg=96){return mesh(new THREE.TorusGeometry(r,t,10,seg),mat(c,.8,.25,c),n,[0,0,z])}
+function cyl(r1,r2,h,z,c,n){return mesh(new THREE.CylinderGeometry(r1,r2,h,48,1,true),mat(c,.8,.25,c),n,[0,0,z])}
+function ball(r,c,n,p=[0,0,0],d=32){return mesh(new THREE.SphereGeometry(r,d,d),mat(c,.65,.25,c),n,p)}
+function block(x,y,z,c,n,p=[0,0,0]){return mesh(new THREE.BoxGeometry(x,y,z),mat(c,.8,.25,c),n,p)}
+function clearModel(){while(modelGroup.children.length){const o=modelGroup.children.pop();o.traverse(v=>{v.geometry?.dispose();if(Array.isArray(v.material))v.material.forEach(m=>m.dispose());else v.material?.dispose()})}exploded=false;selectedReset()}
+function selectedReset(){$("explodeBtn").classList.remove("active")}
+function buildReactor(){
+ring(1.48,.13,0,0x526b83,"Outer Ring");ring(1.32,.05,.08,0x16aaff,"Cooling Ring");ring(1.16,.10,.12,0x9eafc4,"Outer Ring");ring(1.02,.045,.20,0xff792e,"Copper Coil");ring(.88,.08,.24,0x2c8bcb,"Outer Ring");ring(.72,.045,.31,0xff9b44,"Copper Coil");ring(.58,.07,.36,0x6c92b6,"Cooling Ring");ring(.43,.04,.43,0x21dfff,"Power Core");
+cyl(.62,.62,.14,.02,0x1b334a,"Outer Ring");cyl(.42,.42,.10,.43,0x12496e,"Power Core");ball(.30,0x16cfff,"Power Core",[0,0,.53],40);
+for(let i=0;i<12;i++){let a=i*Math.PI/6,r=1.29,b=block(.18,.10,.15,i%3===0?0xff8a35:0x6c8499,"Outer Ring",[Math.cos(a)*r,Math.sin(a)*r,.04]);b.rotation.z=a}
+for(let i=0;i<18;i++){let a=i*Math.PI/9,r=.96,b=block(.10,.18,.10,0xff8738,"Copper Coil",[Math.cos(a)*r,Math.sin(a)*r,.27]);b.rotation.z=a}
+for(let i=0;i<12;i++){let a=i*Math.PI/6,r=.68,b=block(.08,.20,.10,0x35cfff,"Cooling Ring",[Math.cos(a)*r,Math.sin(a)*r,.38]);b.rotation.z=a}
+for(let i=0;i<24;i++){let a=i*Math.PI/12,r=.50,b=block(.03,.16,.03,0x49eaff,"Power Core",[Math.cos(a)*r,Math.sin(a)*r,.48]);b.rotation.z=a}
+// Additional fictional fasteners and cable runs for close-up educational inspection.
+for(let i=0;i<8;i++){const a=i*Math.PI/4,r=1.39,x=Math.cos(a)*r,y=Math.sin(a)*r;const screw=mesh(new THREE.CylinderGeometry(.055,.055,.035,16),mat(0xb5c7d8,.9,.22,0x16334a),"Mounting Screw",[x,y,.12]);screw.rotation.x=Math.PI/2;const slot=block(.052,.009,.009,0x142b3d,"Screw Slot",[x,y,.143]);slot.rotation.z=a}
+for(let i=0;i<6;i++){const a=i*Math.PI/3;const pts=[new THREE.Vector3(Math.cos(a)*.83,Math.sin(a)*.83,.18),new THREE.Vector3(Math.cos(a+.16)*.99,Math.sin(a+.16)*.99,.20),new THREE.Vector3(Math.cos(a+.28)*1.10,Math.sin(a+.28)*1.10,.16)];const curve=new THREE.CatmullRomCurve3(pts);mesh(new THREE.TubeGeometry(curve,16,.018,6,false),mat(i%2?0xff8735:0x39dfff,.55,.3,0x06304a),"Power Cable",[0,0,0])}
+}
+function buildRobot(){ball(.65,0x344c65,"Robot Joint",[0,0,0],36);ring(.79,.08,.04,0x29cfff,"Outer Ring");ring(.94,.055,-.04,0xff8a35,"Outer Ring");ball(.36,0x0c92cb,"Power Core",[0,0,.34],36);ball(.17,0x7beeff,"Power Core",[0,0,.50],24);
+for(let i=0;i<8;i++){let a=i*Math.PI/4,x=Math.cos(a),y=Math.sin(a);ball(.14,0x9babbc,"Robot Joint",[x*1.02,y*1.02,0],16);let arm=block(.52,.12,.14,0x536c87,"Robot Arm",[x*.78,y*.78,0]);arm.rotation.z=a;ball(.06,0xff963f,"Outer Ring",[x*1.02,y*1.02,.12],12)}}
+function buildJet(){cyl(1.05,1.05,.30,0,0x344a60,"Jet Housing");ring(1.10,.10,.18,0x8fa5ba,"Outer Ring");ring(.90,.06,.20,0xff8735,"Cooling Ring");ring(.72,.05,.22,0x1dbdff,"Outer Ring");cyl(.66,.66,.18,.25,0x132b40,"Jet Housing");ball(.24,0x2999d2,"Power Core",[0,0,.38],28);
+for(let i=0;i<18;i++){let a=i*Math.PI/9,b=block(.53,.09,.07,i%3===0?0xff8735:0x90b5cd,"Turbine Blade",[Math.cos(a)*.49,Math.sin(a)*.49,.32]);b.rotation.z=a+.32}}
+function buildEarth(){ball(1.22,0x124e83,"Digital Earth",[0,0,0],40);for(let i=0;i<9;i++){let lat=(i-4)*Math.PI/10,r=1.225*Math.cos(lat),z=1.225*Math.sin(lat);ring(Math.max(.08,r),.008,z,0x28bfff,"Digital Earth",80)}for(let i=0;i<8;i++){let m=mesh(new THREE.TorusGeometry(1.23,.008,6,90),mat(0x36d5ff,.3,.3,0x168bff),"Digital Earth");m.rotation.y=i*Math.PI/8}ring(1.38,.016,0,0xff8735,"Outer Ring")}
+function buildSpace(){
+ ball(.34,0xffb74a,"Planet",[0,0,0],28);ring(.62,.012,.02,0x3acfff,"Orbit Path",100);ring(1.22,.012,.03,0x3acfff,"Orbit Path",100);ring(1.85,.012,.04,0x3acfff,"Orbit Path",100);
+ const colors=[0x28bfff,0xff8a35,0x9e82ff,0x62ffbd];const pts=[[.62,0,0],[0,1.22,0],[-1.85,0,0],[0,-1.22,0]];
+ pts.forEach((p,i)=>{ball(.10,colors[i],"Planet",p,18);let sat=ball(.035,0xffffff,"Satellite",[p[0]*1.08,p[1]*1.08,.06],10);sat.userData.orbitSeed=i});
+ ball(.12,0xffffff,"Satellite",[.3,.3,.12],16);
+}
+function buildGravity(){
+ // Curved-looking concentric rings + a central mass make an interactive conceptual spacetime demo.
+ for(let i=0;i<10;i++){let r=.28+i*.15;let m=mesh(new THREE.TorusGeometry(r,.009,5,80),mat(i%2?0x20bfff:0x1767b7,.3,.3,0x168bff),"Space-Time Grid",[0,0,-.20+i*.004]);m.scale.y=.78}
+ ball(.42,0xff8a35,"Planet",[0,0,.05],32);ball(.15,0x8fefff,"Power Core",[.20,.12,.34],20);
+ for(let i=0;i<8;i++){let a=i*Math.PI/4;let o=ball(.055,0x72eaff,"Satellite",[Math.cos(a)*1.35,Math.sin(a)*1.05,.1],12);o.userData.orbitSeed=i}
+}
+function buildMolecule(){
+ const pts=[];for(let i=0;i<18;i++){let a=i*Math.PI*2/18;let r=1.05;pts.push([Math.cos(a)*r,Math.sin(a)*r,Math.sin(a*2)*.22])}
+ pts.forEach((p,i)=>{ball(.11,i%3===0?0xff8735:(i%3===1?0x24d9ff:0xdcecff),"Molecule Atom",p,16);let q=pts[(i+1)%pts.length];let mid=[(p[0]+q[0])/2,(p[1]+q[1])/2,(p[2]+q[2])/2];let v=new THREE.Vector3(q[0]-p[0],q[1]-p[1],q[2]-p[2]);let bond=cyl(.025,.025,v.length(),mid[2],0x8deaff,"Molecular Bond");bond.position.set(...mid);bond.quaternion.setFromUnitVectors(new THREE.Vector3(0,1,0),v.normalize())});
+ ball(.23,0x8fefff,"Molecule Atom",[0,0,.05],24);
+}
+function buildDNA(){let a=[],b=[];for(let i=0;i<=180;i++){let t=i/180*Math.PI*8,z=(i/180-.5)*3.1;a.push(new THREE.Vector3(Math.cos(t)*.58,Math.sin(t)*.58,z));b.push(new THREE.Vector3(-Math.cos(t)*.58,-Math.sin(t)*.58,z))}mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(a),260,.045,8,false),mat(0x23d7ff,.3,.25,0x0b7aff),"DNA Strand");mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(b),260,.045,8,false),mat(0xff8735,.3,.25,0xff4a15),"DNA Strand");for(let i=0;i<24;i++){let t=i/24*Math.PI*8,z=(i/24-.5)*3.1,bx=block(.86,.035,.035,0x95dfff,"DNA Strand",[0,0,z]);bx.rotation.z=t}}
+// MICRO-DETAIL PASS: adds selectable illustrative fasteners, brackets, actuator lines,
+// service ports and subsystem markers to the built-in demo models. These are educational
+// concept details, not manufacturer-accurate CAD dimensions.
+function microScrew(x,y,z,a=0,size=.035,label="Micro Fastener"){
+ const s=mesh(new THREE.CylinderGeometry(size,size,size*.42,12),mat(0xb9d5e7,.92,.2,0x24465e),label,[x,y,z]);s.rotation.x=Math.PI/2;s.rotation.z=a;
+ const slot=block(size*1.1,size*.16,size*.12,0x10283a,"Fastener Slot",[x,y,z+size*.22]);slot.rotation.z=a;
+ return s;
+}
+function buildMicroDetails(key){
+ if(key==="reactor"){
+  for(let i=0;i<16;i++){const a=i*Math.PI/8,r=1.43;microScrew(Math.cos(a)*r,Math.sin(a)*r,.17,a,.027,"Reactor Micro Bolt")}
+  for(let i=0;i<12;i++){const a=i*Math.PI/6,r=.36;ball(.018,0xb7f7ff,"Core Contact Pin",[Math.cos(a)*r,Math.sin(a)*r,.57],10)}
+  for(let i=0;i<6;i++){const a=i*Math.PI/3,r=.79;ball(.035,0xffa45c,"Coil Terminal",[Math.cos(a)*r,Math.sin(a)*r,.32],12)}
+  for(let i=0;i<4;i++){const a=i*Math.PI/2;const pts=[new THREE.Vector3(Math.cos(a)*.73,Math.sin(a)*.73,.13),new THREE.Vector3(Math.cos(a+.18)*.88,Math.sin(a+.18)*.88,.11),new THREE.Vector3(Math.cos(a+.25)*1.03,Math.sin(a+.25)*1.03,.14)];mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts),12,.012,5,false),mat(i%2?0xff9c48:0x40e6ff,.5,.3,0x09334b),"Secondary Power Lead")}
+ }
+ if(key==="robot"){
+  for(let i=0;i<12;i++){const a=i*Math.PI/6,r=.60;microScrew(Math.cos(a)*r,Math.sin(a)*r,.28,a,.022,"Core Housing Screw")}
+  for(let i=0;i<8;i++){const a=i*Math.PI/4,x=Math.cos(a),y=Math.sin(a);ring(.105,.018,.04,0x9cefff,"Joint Bearing Race",24).position.set(x*.98,y*.98,.03);cyl(.025,.025,.42,.0,0x8ea8bd,"Hydraulic Actuator Rod").position.set(x*.76,y*.76,.16);ball(.045,0xffa04d,"Actuator Pivot",[x*.76,y*.76,.37],12);microScrew(x*.98,y*.98,.13,a,.018,"Arm Joint Bolt")}
+  for(let i=0;i<4;i++){const x=(i-1.5)*.12;mesh(new THREE.CylinderGeometry(.018,.018,.32,8),mat(0x46dfff,.6,.3,0x07354a),"Coolant Micro Tube",[x,-.20,.18]).rotation.x=Math.PI/2}
+ }
+ if(key==="jet"){
+  for(let i=0;i<24;i++){const a=i*Math.PI/12;microScrew(Math.cos(a)*1.04,Math.sin(a)*1.04,.17,a,.022,"Engine Casing Rivet")}
+  for(let i=0;i<12;i++){const a=i*Math.PI/6,r=.61;const b=block(.28,.035,.045,0x6a91aa,"Compressor Stator Vane",[Math.cos(a)*r,Math.sin(a)*r,.43]);b.rotation.z=a+.18;microScrew(Math.cos(a)*.84,Math.sin(a)*.84,.31,a,.018,"Turbine Retainer Bolt")}
+  for(let i=0;i<6;i++){const a=i*Math.PI/3;const pts=[new THREE.Vector3(Math.cos(a)*.52,Math.sin(a)*.52,-.12),new THREE.Vector3(Math.cos(a+.12)*.74,Math.sin(a+.12)*.74,-.10),new THREE.Vector3(Math.cos(a+.2)*.92,Math.sin(a+.2)*.92,-.08)];mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts),10,.014,5,false),mat(i%2?0xff9b4a:0x45dfff,.55,.3,0x09263c),"Fuel / Sensor Line")}
+  cyl(.12,.12,.46,-.10,0x9cb6c8,"Central Drive Shaft");ring(.18,.025,-.10,0x37dfff,"Shaft Bearing",32)
+ }
+ if(key==="earth"){
+  for(let i=0;i<18;i++){const lat=-1.05+(i%6)*.42,lon=Math.floor(i/6)*2.05+(i%3)*.16;const r=1.235;ball(.018,i%3===0?0xff9b4a:0x5de8ff,"Geo Sensor Node",[r*Math.cos(lat)*Math.cos(lon),r*Math.cos(lat)*Math.sin(lon),r*Math.sin(lat)],8)}
+  for(let i=0;i<4;i++){const a=i*Math.PI/2;const sat=new THREE.Group();sat.name="Earth Observation Satellite Assembly";sat.position.set(Math.cos(a)*1.52,Math.sin(a)*1.52,.16);modelGroup.add(sat);const body=new THREE.Mesh(new THREE.BoxGeometry(.10,.08,.08),mat(0xaac4d7,.8,.25,0x15364d));body.name="Satellite Bus";body.userData.twinCategory="Satellite Bus";body.userData.twinLabel="Satellite Bus • Micro";sat.add(body);for(let side of [-1,1]){const panel=new THREE.Mesh(new THREE.BoxGeometry(.18,.09,.012),mat(0x1b80c0,.65,.28,0x0a3e72));panel.position.x=side*.14;panel.name="Solar Panel Segment";panel.userData.twinCategory="Solar Panel Segment";panel.userData.twinLabel="Solar Panel Segment • Micro";sat.add(panel)}const ant=new THREE.Mesh(new THREE.CylinderGeometry(.006,.006,.12,6),mat(0xc5f7ff,.4,.3,0x4bdfff));ant.position.z=.09;ant.name="Telemetry Antenna";ant.userData.twinCategory="Telemetry Antenna";ant.userData.twinLabel="Telemetry Antenna • Micro";sat.add(ant)}
+ }
+ if(key==="dna"){
+  for(let i=0;i<24;i++){const t=i/24*Math.PI*8,z=(i/24-.5)*3.1;for(const sign of [-1,1]){const a=t+(sign<0?Math.PI:0);ball(.025,sign<0?0xffad5a:0x82f4ff,"Base Pair Connector",[Math.cos(a)*.58,Math.sin(a)*.58,z],10)}}
+  for(let i=0;i<8;i++){const z=(i/7-.5)*3.1;ring(.67,.009,z,0x7dbad7,"DNA Stabilizer Ring",36).rotation.x=Math.PI/2}
+ }
+ if(key==="space"){
+  for(let i=0;i<4;i++){const p=[[.62,0,0],[0,1.22,0],[-1.85,0,0],[0,-1.22,0]][i];const base=new THREE.Vector3(p[0]*1.08,p[1]*1.08,.06);for(let side of [-1,1]){const panel=block(.22,.10,.025,0x247eb5,"Satellite Solar Panel",[base.x+side*.13,base.y,base.z]);panel.rotation.z=i*Math.PI/2}const antenna=mesh(new THREE.CylinderGeometry(.008,.008,.22,6),mat(0xcaf7ff,.4,.3,0x35dfff),"Satellite Antenna",[base.x,base.y,base.z+.12]);antenna.rotation.x=Math.PI/2;microScrew(base.x,base.y,base.z+.08,0,.012,"Satellite Fastener")}
+ }
+ if(key==="gravity"){
+  for(let i=0;i<16;i++){const a=i*Math.PI/8,r=1.52;ball(.018,i%2?0x31d8ff:0xffa05a,"Grid Sensor Node",[Math.cos(a)*r,Math.sin(a)*r*.78,-.13],8)}
+  ring(.55,.014,.18,0xffa052,"Accretion Ring Inner",72);ring(.72,.012,.14,0x36dfff,"Accretion Ring Outer",72)
+ }
+ if(key==="molecule"){
+  for(let i=0;i<18;i++){const a=i*Math.PI*2/18,r=1.05;const p=[Math.cos(a)*r,Math.sin(a)*r,Math.sin(a*2)*.22];for(let k=0;k<3;k++){const off=(k-1)*.045;ball(.022,k===1?0xffa35a:0x8cefff,"Atom Surface Marker",[p[0]+off,p[1],p[2]+off],8)}}
+  for(let i=0;i<6;i++){const a=i*Math.PI/3;ring(.15,.012,.07,0x8cefff,"Electron Probability Loop",40).position.set(Math.cos(a)*.28,Math.sin(a)*.28,.12);}
+ }
+}
+const builders={reactor:buildReactor,robot:buildRobot,jet:buildJet,earth:buildEarth,dna:buildDNA,space:buildSpace,gravity:buildGravity,molecule:buildMolecule};
+const names={reactor:"ARC REACTOR MK-III",robot:"ROBOT CORE",jet:"JET ENGINE",earth:"DIGITAL EARTH",dna:"DNA HELIX",space:"SPACE MISSION CONTROL",gravity:"GRAVITY & SPACE-TIME LAB",molecule:"MOLECULAR DISCOVERY CHAMBER"};
+function applyModes(){modelGroup.traverse(o=>{if(!o.isMesh)return;o.material.wireframe=wire;o.material.transparent=xray;o.material.opacity=xray?.28:1;o.material.depthWrite=!xray;o.material.needsUpdate=true})}
+let activePartName="Power Core",calloutNodes=[];
+let twinPartCounter=0,twinSelectedObject=null,twinIsolated=false,twinOriginalVisibility=new Map();
+function shortPartDescription(name){const d=partDetails[name]||"Conceptual component in this 3D model.";return d.length>100?d.slice(0,97)+"…":d}
+function rebuildPartCallouts(){
+ const layer=$("partCallouts"),svg=$("partCalloutLines");if(!layer||!svg||!modelGroup||!THREE)return;
+ layer.querySelectorAll(".partCallout").forEach(n=>n.remove());while(svg.firstChild)svg.removeChild(svg.firstChild);calloutNodes=[];
+ const unique=[];modelGroup.traverse(o=>{if(o.isMesh&&o.name&&!unique.some(x=>x.name===o.name))unique.push(o)});
+ const chosen=unique.slice(0,8);const ns="http://www.w3.org/2000/svg";
+ chosen.forEach((obj,i)=>{
+  const label=document.createElement("button");label.type="button";label.className="partCallout"+(obj.name===activePartName?" selected":"");label.innerHTML='<strong></strong><i class="calloutDot"></i>';
+  label.querySelector("strong").textContent=obj.name;label.addEventListener("click",()=>choosePart(obj.name));layer.appendChild(label);
+  const line=document.createElementNS(ns,"polyline");line.setAttribute("fill","none");line.setAttribute("stroke","#36ddff");line.setAttribute("stroke-width","1.2");line.setAttribute("stroke-opacity",".8");svg.appendChild(line);
+  const dot=document.createElementNS(ns,"circle");dot.setAttribute("r","2.5");dot.setAttribute("fill","#aaf7ff");dot.setAttribute("stroke","#27e4ff");dot.setAttribute("stroke-width","1");svg.appendChild(dot);
+  calloutNodes.push({obj,label,line,dot,index:i});
+ });
+ updatePartCalloutPositions();
+}
+function updatePartCalloutPositions(){
+ if(!calloutNodes.length||!renderer||!camera||!root)return;
+ const w=stage.clientWidth,h=stage.clientHeight;if(!w||!h)return;
+ const placed=[];calloutNodes.forEach((c,i)=>{
+  const world=c.obj.getWorldPosition(new THREE.Vector3());world.project(camera);
+  const px=(world.x*.5+.5)*w,py=(-world.y*.5+.5)*h;
+  const visible=world.z>-1&&world.z<1&&px>3&&px<w-3&&py>3&&py<h-3;
+  if(!visible){c.label.style.display="none";c.line.setAttribute("points","");c.dot.setAttribute("display","none");return}
+  c.label.style.display="block";
+  // Keep labels near the stage edges so the central model stays visible.
+  const side=i%2===0?-1:1;const edgePad=Math.min(66,Math.max(42,w*.14));
+  let lx=side<0?edgePad:w-edgePad;
+  let ly=py+(Math.floor(i/2)-1)*49;
+  ly=Math.max(52,Math.min(h-48,ly));
+  for(const p of placed){if(Math.abs(lx-p.x)<55&&Math.abs(ly-p.y)<29){ly=Math.min(h-48,ly+31);if(Math.abs(ly-p.y)<29)ly=Math.max(52,ly-62)}}
+  placed.push({x:lx,y:ly});
+  c.label.style.left=lx+"px";c.label.style.top=ly+"px";c.label.classList.toggle("selected",c.obj.name===activePartName);
+  c.line.setAttribute("points",`${px},${py} ${px+(lx-px)*.55},${py+(ly-py)*.55} ${lx},${ly}`);c.dot.setAttribute("cx",px);c.dot.setAttribute("cy",py);c.dot.removeAttribute("display");
+ });
+}
+function refreshComponentDock(selectedName){
+ const parts=[...new Set((modelGroup?.children||[]).map(o=>o.name).filter(Boolean))];
+ const list=$("componentList");if(!list)return;list.replaceChildren();
+ $("dockModel").textContent=(names[currentModel]||currentModel).replace(" MK-III","");$("dockCount").textContent=String(parts.length);$("dockMode").textContent=xray?"X-RAY":wire?"WIREFRAME":exploded?"EXPLODED":"SOLID";
+ if(!parts.length){list.innerHTML='<span class="muted">No components available yet.</span>';return}
+ parts.slice(0,18).forEach(n=>{const b=document.createElement("button");b.type="button";b.textContent=n;b.className=n===selectedName?"selected":"";b.onclick=()=>choosePart(n);list.appendChild(b)});
+}
+function updateDockPart(n,d){$("dockPartName").textContent=n;$("dockPartDesc").textContent=d;$("sidePartName").textContent=n;$("sidePartDesc").textContent=d;$("sidePartModel").textContent=(names[currentModel]||currentModel).replace(" MK-III","");$("sidePartStatus").textContent="SELECTED / TRACKING";$("sidePartTip").textContent="J.A.R.V.I.S. ready to explain";refreshComponentDock(n)}
+function twinMeshes(){const out=[];modelGroup?.traverse(o=>{if(o.isMesh){if(!o.userData.twinLabel){o.userData.twinCategory=o.name||"Component";o.userData.twinLabel=(o.name||"Component")+" • "+String(++twinPartCounter).padStart(3,"0");o.userData.twinId="part-"+twinPartCounter}out.push(o)}});return out}
+function twinPartDescription(obj){const cat=obj?.userData?.twinCategory||obj?.name||"Component";return partDetails[cat]||"Individual selectable mesh in the assembly. Imported GLB/GLTF detail depends on the source file; built-in micro-details are educational illustrations, not verified manufacturing CAD. Verify dimensions, materials, wiring and function against source CAD or manufacturer data."}
+function chooseMeshPart(obj){if(!obj)return; twinSelectedObject=obj;const label=obj.userData.twinLabel||obj.name||"Component";const cat=obj.userData.twinCategory||obj.name||"Component";activePartName=cat;const d=twinPartDescription(obj);$("partName").textContent=label;$("partDesc").textContent=d;$("stageInfo").textContent=label+": "+d;$("jarvisText").textContent="Selected mesh: "+label+"\nCategory: "+cat+"\n"+d;updateDockPart(label,d);renderTwinTree($("twinSearch")?.value||"");renderTwinInfo(obj);rebuildPartCallouts()}
+function renderTwinInfo(obj){const box=$("twinInfo");if(!box)return;if(!obj){box.textContent="Select a component from the 3D model or hierarchy.";return}const cat=obj.userData.twinCategory||obj.name||"Component";const pos=obj.position;const scale=obj.scale;const geo=obj.geometry;const verts=geo?.attributes?.position?.count;box.replaceChildren();const lines=[['PART',obj.userData.twinLabel||obj.name],['CATEGORY',cat],['GEOMETRY',geo?.type||'Mesh geometry'],['VERTICES',Number.isFinite(verts)?String(verts):'Not exposed'],['POSITION',`${pos.x.toFixed(3)}, ${pos.y.toFixed(3)}, ${pos.z.toFixed(3)}`],['SCALE',`${scale.x.toFixed(2)}, ${scale.y.toFixed(2)}, ${scale.z.toFixed(2)}`],['FUNCTION',twinPartDescription(obj)],['ACCURACY','Conceptual mesh; not verified manufacturing data']];for(const [k,v] of lines){const row=document.createElement('div');const b=document.createElement('strong');b.textContent=k+': ';row.append(b,document.createTextNode(v));box.appendChild(row)}}
+function renderTwinTree(query=''){const tree=$("twinTree");if(!tree||!modelGroup)return;tree.replaceChildren();const meshes=twinMeshes();const q=String(query||'').trim().toLowerCase();const groups=new Map();for(const obj of meshes){const cat=obj.userData.twinCategory||obj.name||'Component';if(!groups.has(cat))groups.set(cat,[]);groups.get(cat).push(obj)}let shown=0;for(const [cat,items] of groups){const filtered=items.filter(o=>(cat+' '+o.userData.twinLabel+' '+twinPartDescription(o)).toLowerCase().includes(q));if(!filtered.length)continue;const head=document.createElement('button');head.type='button';head.className='twinCategory';head.textContent=`▾ ${cat} (${filtered.length})`;head.onclick=()=>{const hide=head.dataset.closed!=='1';head.dataset.closed=hide?'1':'0';let n=head.nextElementSibling;while(n&&n.dataset.group===cat){n.hidden=hide;n=n.nextElementSibling}head.textContent=`${hide?'▸':'▾'} ${cat} (${filtered.length})`};tree.appendChild(head);for(const obj of filtered.slice(0,100)){const b=document.createElement('button');b.type='button';b.className='twinPart'+(obj===twinSelectedObject?' selected':'');b.dataset.group=cat;b.textContent='↳ '+obj.userData.twinLabel;b.onclick=()=>chooseMeshPart(obj);tree.appendChild(b);shown++}}if(!shown){const empty=document.createElement('div');empty.className='muted';empty.textContent='No matching parts in this model.';tree.appendChild(empty)}const note=document.createElement('div');note.className='twinNotice';note.textContent=`${meshes.length} mesh instances • ${groups.size} component categories. Tree is capped at 100 matching instances per category for phone performance.`;tree.appendChild(note)}
+function restoreTwinVisibility(){for(const [obj,visible] of twinOriginalVisibility)obj.visible=visible;twinOriginalVisibility.clear();twinIsolated=false;$("twinIsolate")?.classList.remove('active');renderTwinTree($("twinSearch")?.value||"")}
+function isolateTwinSelection(){if(!twinSelectedObject){$("jarvisText").textContent='Select a component first, then choose Isolate Selected.';return}if(twinIsolated){restoreTwinVisibility();return}twinOriginalVisibility.clear();twinMeshes().forEach(o=>{twinOriginalVisibility.set(o,o.visible);o.visible=(o===twinSelectedObject)});twinIsolated=true;$("twinIsolate")?.classList.add('active');$("jarvisText").textContent='Isolated '+(twinSelectedObject.userData.twinLabel||twinSelectedObject.name)+'. Use Restore Assembly to show all parts.'}
+$("twinSearch")?.addEventListener('input',e=>renderTwinTree(e.target.value));$("twinShowAll")?.addEventListener('click',()=>{twinMeshes().forEach(o=>o.visible=true);restoreTwinVisibility();$("jarvisText").textContent='All assembly mesh parts are visible.'});$("twinIsolate")?.addEventListener('click',isolateTwinSelection);$("twinRestore")?.addEventListener('click',()=>{twinMeshes().forEach(o=>o.visible=true);restoreTwinVisibility();$("jarvisText").textContent='Assembly restored.'});
+function loadModel(key){if(!builders[key])return;restoreTwinVisibility();twinSelectedObject=null;twinPartCounter=0;currentModel=key;clearModel();builders[key]();buildMicroDetails(key);$("stageTitle").textContent=names[key];$("stageInfo").textContent="Drag to rotate • Tap a component for information";$("partName").textContent=names[key];$("partDesc").textContent="Select a component to learn more.";$("jarvisText").textContent="Model loaded. I am ready to explain its visible components.";cameraDistance=(key==="dna"||key==="molecule")?6:7.5;camera.position.set(0,0,cameraDistance);root.rotation.set(0,0,0);root.position.set(0,0,0);smoothRotX=targetRotX=smoothRotY=targetRotY=0;targetMoveX=smoothMoveX=targetMoveY=smoothMoveY=0;applyModes();updateDockPart(names[key],"Tap a glowing label attached to a model part to inspect its purpose.");activePartName=(modelGroup.children.find(o=>o.name)?.name)||"";rebuildPartCallouts();renderTwinTree("");renderTwinInfo(null)}
+function resize(){if(!renderer)return;let w=stage.clientWidth,h=stage.clientHeight;if(!w||!h)return;camera.aspect=w/h;camera.updateProjectionMatrix();renderer.setSize(w,h,false)}
+function setZoom(v){cameraDistance=THREE.MathUtils.clamp(v,3,13);camera.position.set(0,0,cameraDistance)}
+$("zoomIn").onclick=()=>setZoom(cameraDistance-.6);$("zoomOut").onclick=()=>setZoom(cameraDistance+.6);
+$("resetBtn").onclick=()=>{twinMeshes().forEach(o=>o.visible=true);restoreTwinVisibility();root.rotation.set(0,0,0);root.position.set(0,0,0);root.scale.setScalar(1);smoothRotX=targetRotX=smoothRotY=targetRotY=0;targetMoveX=smoothMoveX=targetMoveY=smoothMoveY=0;cameraDistance=7.5;camera.position.set(0,0,cameraDistance);modelGroup.children.forEach(o=>{o.userData.targetPosition=null;o.position.copy(o.userData.originalPosition||o.position)});cameraDistance=7.5;camera.position.setLength(cameraDistance);preExplodeCameraDistance=cameraDistance;exploded=false;$("explodeBtn").classList.remove("active")};
+$("rotateBtn").onclick=()=>{autoRotate=!autoRotate;$("rotateBtn").classList.toggle("active",autoRotate)};
+$("explodeBtn").onclick=()=>{
+ exploded=!exploded;
+ if(exploded){
+  preExplodeCameraDistance=cameraDistance;
+  // Start from a stable front-facing view so the exploded parts remain visible.
+  root.rotation.set(0,0,0);smoothRotX=targetRotX=smoothRotY=targetRotY=0;
+ }else{
+  cameraDistance=preExplodeCameraDistance;
+  camera.position.setLength(cameraDistance);
+ }
+ $("explodeBtn").classList.toggle("active",exploded);
+ $("dockMode").textContent=xray?"X-RAY":wire?"WIREFRAME":exploded?"EXPLODED":"SOLID";
+ // Keep each named subassembly intact and separate it along the camera-facing depth axis.
+ // This avoids sending parts off the sides of a narrow phone screen.
+ const items=[...modelGroup.children];
+ items.forEach(o=>{if(!o.userData.originalPosition)o.userData.originalPosition=o.position.clone()});
+ const groups=new Map();
+ items.forEach(o=>{const key=o.name||"Component";if(!groups.has(key))groups.set(key,[]);groups.get(key).push(o)});
+ const entries=[...groups.entries()];
+ const step=entries.length>7?.62:entries.length>4?.78:.92;
+ const center=(entries.length-1)/2;
+ entries.forEach(([name,group],gi)=>{
+  const centroid=new THREE.Vector3();group.forEach(o=>centroid.add(o.userData.originalPosition));centroid.divideScalar(group.length);
+  // The parts stay in a straight front-to-back line, retaining each subassembly's shape.
+  const slotZ=(gi-center)*step;
+  group.forEach(o=>{
+   const origin=o.userData.originalPosition;
+   const target=origin.clone();
+   target.z+=(slotZ-centroid.z);
+   o.userData.targetPosition=exploded?target:origin.clone();
+  });
+ });
+ // Keep the complete assembly framed on mobile; depth separation is visible without huge zoom-out.
+ if(exploded){cameraDistance=THREE.MathUtils.clamp(Math.max(cameraDistance,8.8),8.8,11);camera.position.set(0,0,cameraDistance)}
+};
+$("wireBtn").onclick=()=>{wire=!wire;$("wireBtn").classList.toggle("active",wire);applyModes();$("dockMode").textContent=xray?"X-RAY":wire?"WIREFRAME":exploded?"EXPLODED":"SOLID"};$("xrayBtn").onclick=()=>{xray=!xray;$("xrayBtn").classList.toggle("active",xray);applyModes();$("dockMode").textContent=xray?"X-RAY":wire?"WIREFRAME":exploded?"EXPLODED":"SOLID"};
+document.querySelectorAll("[data-model]").forEach(b=>b.onclick=()=>loadModel(b.dataset.model));
+function choosePart(n){activePartName=n;const matching=twinMeshes().find(o=>(o.userData.twinCategory||o.name)===n);if(matching){twinSelectedObject=matching;renderTwinInfo(matching)}let d=partDetails[n]||"A visible component in this conceptual 3D model."; $("partName").textContent=n;$("partDesc").textContent=d;$("stageInfo").textContent=n+": "+d;$("jarvisText").textContent="Selected: "+n+"\n"+d;updateDockPart(n,d);renderTwinTree($("twinSearch")?.value||"");rebuildPartCallouts()}
+rendererPointerSetup();
+function rendererPointerSetup(){/* renderer is attached after module load; handlers are installed below */}
+function installPointer(){const c=renderer.domElement;c.addEventListener("pointerdown",e=>{if(handEnabled)return;dragging=true;lastX=downX=e.clientX;lastY=downY=e.clientY;moved=false;try{c.setPointerCapture(e.pointerId)}catch{}});
+c.addEventListener("pointermove",e=>{if(!dragging||handEnabled)return;let dx=e.clientX-lastX,dy=e.clientY-lastY;if(Math.abs(e.clientX-downX)+Math.abs(e.clientY-downY)>6)moved=true;if(labBuilderOn&&modelMoveMode){targetMoveX=THREE.MathUtils.clamp(targetMoveX+dx*.006,-2.5,2.5);targetMoveY=THREE.MathUtils.clamp(targetMoveY-dy*.006,-2,2)}else{targetRotY+=dx*.006;targetRotX+=dy*.006;targetRotX=THREE.MathUtils.clamp(targetRotX,-1.45,1.45)}lastX=e.clientX;lastY=e.clientY});
+const end=e=>{if(!dragging)return;dragging=false;if(moved)return;let r=c.getBoundingClientRect();pointer.x=(e.clientX-r.left)/r.width*2-1;pointer.y=-((e.clientY-r.top)/r.height)*2+1;raycaster.setFromCamera(pointer,camera);let hits=raycaster.intersectObjects(modelGroup.children,true);if(hits.length)chooseMeshPart(hits[0].object)};c.addEventListener("pointerup",end);c.addEventListener("pointercancel",()=>dragging=false);
+let startDist=0,startZoom=0;c.addEventListener("touchstart",e=>{if(e.touches.length===2){startDist=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);startZoom=cameraDistance}},{passive:true});c.addEventListener("touchmove",e=>{if(e.touches.length===2&&startDist>0){let d=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);setZoom(startZoom*startDist/Math.max(1,d))}},{passive:true})}
+function pickJarvisVoice(){
+ if(!("speechSynthesis" in window))return null;
+ const voices=speechSynthesis.getVoices()||[];
+ // Browser voices do not expose a reliable gender flag; prefer commonly male-labelled English voices when available.
+ const maleHints=/male|david|mark|daniel|james|guy|richard|rishi|aarav|prabhat|fred|alex/i;
+ return voices.find(v=>maleHints.test(v.name)&&/^en(-|_)(IN|US|GB|AU|CA)/i.test(v.lang))
+  ||voices.find(v=>maleHints.test(v.name))
+  ||voices.find(v=>/^en-IN/i.test(v.lang))
+  ||voices.find(v=>/^hi-IN/i.test(v.lang))||null;
+}
+function speakJarvis(t, rate=0.94){
+ if(!("speechSynthesis" in window))return;
+ speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(t),v=pickJarvisVoice();
+ if(v){u.voice=v;u.lang=v.lang||"en-IN"}else u.lang="en-IN";
+ u.rate=rate;u.pitch=0.82;speechSynthesis.speak(u);
+}
+if("speechSynthesis" in window)speechSynthesis.onvoiceschanged=()=>pickJarvisVoice();
+function say(t){$("jarvisText").textContent=t;speakJarvis(t,.93)}
+$("voiceBtn").onclick=()=>say(names[currentModel]+". Yeh ek conceptual 3D visualization hai. Model ke kisi part par tap karke uski jankari dekhein.");
+
+function wakeJarvis(){
+ autoRotate=true;$("rotateBtn").classList.add("active");wakePulse=1;
+ $("jarvisText").textContent="J.A.R.V.I.S. online. Welcome back.";setStatus("J.A.R.V.I.S. Online");
+ speakJarvis("Yes, I am online. Welcome back.",.96);
+}
+function runVoiceCommand(t){
+ if(t.includes("arc reactor")||t.includes("reactor")){loadModel("reactor");say("Arc Reactor loaded.");return}
+ if(t.includes("robot core")||t.includes("robot")){loadModel("robot");say("Robot Core loaded.");return}
+ if(t.includes("jet engine")||t.includes("engine")){loadModel("jet");say("Jet Engine loaded.");return}
+ if(t.includes("digital earth")||t.includes("show earth")||t.includes("earth")){loadModel("earth");say("Digital Earth loaded.");return}
+ if(t.includes("dna")){loadModel("dna");say("DNA Helix loaded.");return}
+ if(t.includes("space")||t.includes("mission control")){loadModel("space");say("Space Mission Control loaded.");return}
+ if(t.includes("gravity")){loadModel("gravity");say("Gravity lab loaded.");return}
+ if(t.includes("molecule")){loadModel("molecule");say("Molecular Discovery Chamber loaded.");return}
+ if(t.includes("x ray")||t.includes("x-ray")){$("xrayBtn").click();say("X-ray mode toggled.");return}
+ if(t.includes("wireframe")){ $("wireBtn").click();say("Wireframe mode toggled.");return }
+ if(t.includes("explode")){ $("explodeBtn").click();say("Exploded view toggled.");return }
+ if(t.includes("reset")){ $("resetBtn").click();say("View reset.");return }
+ if(t.includes("scan")){smartScan();return}
+ if(t.includes("report")){downloadLabReport();return}
+ if(t.includes("explain")){ $("voiceBtn").click();return }
+ say("Command received. Try show Arc Reactor, show Earth, activate X-Ray, explode parts, reset view, smart scan, or lab report.");
+}
+function toggleWakeWord(){
+ const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+ if(voiceEnabled){voiceEnabled=false;try{voiceRecognition?.stop()}catch{}$("wakeBtn").textContent="🎙 Wake Up JARVIS";$("wakeBtn").classList.remove("active");return}
+ if(!SR){$("jarvisText").textContent="Wake word support nahi hai. Android Chrome mein try karein; browser speech recognition support zaroori hai.";return}
+ try{
+  voiceRecognition=new SR();voiceRecognition.lang="en-US";voiceRecognition.continuous=true;voiceRecognition.interimResults=false;
+  voiceRecognition.onresult=e=>{for(let i=e.resultIndex;i<e.results.length;i++){if(!e.results[i].isFinal)continue;const t=e.results[i][0].transcript.toLowerCase();if(t.includes("wake up jarvis")||t.includes("hey jarvis")){wakeJarvis();continue}runVoiceCommand(t)}};
+  voiceRecognition.onerror=e=>{if(e.error==="not-allowed"||e.error==="service-not-allowed"){$("jarvisText").textContent="Microphone permission allow karein, phir wake word dobara start karein.";voiceEnabled=false;$("wakeBtn").textContent="🎙 Wake Up JARVIS"}};
+  voiceRecognition.onend=()=>{if(voiceEnabled){try{voiceRecognition.start()}catch{}}};
+  voiceEnabled=true;voiceRecognition.start();$("wakeBtn").textContent="🎙 Wake Word: ON";$("wakeBtn").classList.add("active");$("jarvisText").textContent='Listening… say "Wake up Jarvis". Keep this page open.';
+ }catch(e){voiceEnabled=false;$("jarvisText").textContent="Voice recognition start nahi ho saka. Microphone permission check karein."}
+}
+$("wakeBtn").onclick=toggleWakeWord;
+
+$("stopVoice").onclick=()=>{if("speechSynthesis"in window)speechSynthesis.cancel()};
+$("allBtn").onclick=()=>say("Visible components: "+[...new Set(modelGroup.children.map(o=>o.name).filter(Boolean))].join(", "));
+function answerQuestion(q){q=q.toLowerCase();if(q.includes("space")||q.includes("mission")||q.includes("planet"))return"Space Mission Control is an educational visualization. Select planets and inspect their illustrative orbit paths; these are not live astronomical positions.";if(q.includes("gravity")||q.includes("space-time"))return"This is a simplified gravity and spacetime visualization. The mass slider changes the visual intensity only; it is not a scientific numerical solver.";if(q.includes("molecule")||q.includes("atom")||q.includes("bond"))return partDetails["Molecule Atom"]+" "+partDetails["Molecular Bond"];if(q.includes("rpm")||q.includes("jet"))return"Engine RPM slider controls the visual spin speed of the jet turbine. It is a simulation, not a real engine model.";if(q.includes("save")||q.includes("layout"))return"Use Save Layout to store this model, zoom and rotation on this device. Load Layout restores the saved local layout.";if(q.includes("core")||q.includes("reactor"))return partDetails["Power Core"];if(q.includes("coil"))return partDetails["Copper Coil"];if(q.includes("turbine")||q.includes("engine")||q.includes("blade"))return partDetails["Turbine Blade"];if(q.includes("robot")||q.includes("joint"))return partDetails["Robot Joint"];if(q.includes("earth"))return partDetails["Digital Earth"];if(q.includes("dna"))return partDetails["DNA Strand"];if(q.includes("zoom"))return"Zoom buttons dabayein ya screen par do ungliyon se pinch karein.";if(q.includes("hand")||q.includes("gesture"))return"Start Hand Tracking dabayein, camera permission allow karein, phir haath ko move karke rotate karein aur thumb-index pinch se zoom karein.";return"Main J.A.R.V.I.S. hoon. Aap current model ke core, coil, engine, robot joint, Earth, DNA, zoom ya hand tracking ke baare mein pooch sakte hain."}
+$("askBtn").onclick=()=>{let q=$("chatInput").value.trim();if(q)say(answerQuestion(q));else $("jarvisText").textContent="Pehle apna question likhein."};$("chatInput").addEventListener("keydown",e=>{if(e.key==="Enter")$("askBtn").click()});
+// Advanced lab modules: local-only layout persistence, simulation controls and presentation tools.
+function updateEarthLayers(){earthLayersOn=!earthLayersOn;modelGroup.children.forEach(o=>{if(o.name==="Digital Earth"||o.name==="Outer Ring")o.visible=earthLayersOn});$("earthLayersBtn").classList.toggle("active",!earthLayersOn);$("jarvisText").textContent=earthLayersOn?"Earth grid and atmosphere layers visible.":"Earth grid and overlay layers hidden."}
+$("earthLayersBtn").onclick=()=>{if(currentModel!=="earth")loadModel("earth");updateEarthLayers()};
+$("missionBtn").onclick=()=>{loadModel("space");missionMode=true;$("jarvisText").textContent="Mission Control online. Orbit paths are illustrative; select a planet for details.";say("Space mission control online.")};
+$("gravityBtn").onclick=()=>{loadModel("gravity");$("jarvisText").textContent="Gravity lab online. Change the Gravity slider to alter the visual field intensity."};
+$("labBuilderBtn").onclick=()=>{labBuilderOn=!labBuilderOn;$("labBuilderBtn").classList.toggle("active",labBuilderOn);if(!labBuilderOn){modelMoveMode=false;$("moveModeBtn").classList.remove("active")}if(labBuilderOn){autoRotate=false;$("rotateBtn").classList.remove("active");$("jarvisText").textContent="Lab Builder enabled. Use Move Model, drag to arrange, use Model Size buttons, then Save Layout."}else{$("jarvisText").textContent="Lab Builder disabled."}};
+$("moveModeBtn").onclick=()=>{if(!labBuilderOn){labBuilderOn=true;$("labBuilderBtn").classList.add("active");autoRotate=false;$("rotateBtn").classList.remove("active")}modelMoveMode=!modelMoveMode;$("moveModeBtn").classList.toggle("active",modelMoveMode);$("jarvisText").textContent=modelMoveMode?"Move mode ON: drag the model left/right/up/down to arrange it.":"Move mode OFF: drag to rotate the model."};
+$("scaleUpBtn").onclick=()=>{root.scale.setScalar(Math.min(2.5,root.scale.x*1.12));$("jarvisText").textContent="Model size increased. Save Layout to keep this arrangement."};
+$("scaleDownBtn").onclick=()=>{root.scale.setScalar(Math.max(.4,root.scale.x/1.12));$("jarvisText").textContent="Model size reduced. Save Layout to keep this arrangement."};
+$("saveLayoutBtn").onclick=()=>{try{const data={model:currentModel,rotation:[root.rotation.x,root.rotation.y,root.rotation.z],position:[root.position.x,root.position.y,root.position.z],scale:root.scale.x,zoom:cameraDistance,autoRotate,wire,xray};localStorage.setItem("holomodel-layout-v2",JSON.stringify(data));$("jarvisText").textContent="Layout saved on this device. It is not uploaded to a server."}catch(e){$("jarvisText").textContent="Could not save layout in this browser."}};
+$("loadLayoutBtn").onclick=()=>{try{const d=JSON.parse(localStorage.getItem("holomodel-layout-v2")||"null");if(!d){$("jarvisText").textContent="No saved layout found on this device.";return}loadModel(d.model);root.rotation.set(...d.rotation);if(Array.isArray(d.position)&&d.position.length===3){root.position.set(...d.position);targetMoveX=smoothMoveX=root.position.x;targetMoveY=smoothMoveY=root.position.y;}root.scale.setScalar(Number.isFinite(d.scale)?d.scale:1);smoothRotX=targetRotX=root.rotation.x;smoothRotY=targetRotY=root.rotation.y;setZoom(d.zoom);autoRotate=!!d.autoRotate;wire=!!d.wire;xray=!!d.xray;$("rotateBtn").classList.toggle("active",autoRotate);$("wireBtn").classList.toggle("active",wire);$("xrayBtn").classList.toggle("active",xray);applyModes();$("jarvisText").textContent="Saved layout restored."}catch(e){$("jarvisText").textContent="Saved layout could not be restored."}};
+$("rpmSlider").addEventListener("input",e=>{engineRPM=Number(e.target.value);$("jarvisText").textContent="Jet engine visual RPM: "+engineRPM+"%. This changes animation speed only."});
+$("massSlider").addEventListener("input",e=>{gravityMass=Number(e.target.value);if(currentModel==="gravity"&&modelGroup){modelGroup.children.forEach(o=>{if(o.name==="Space-Time Grid")o.scale.set(1,Math.max(.35,1.2-gravityMass*.065),1);if(o.name==="Planet")o.scale.setScalar(.75+gravityMass*.045)})}$("jarvisText").textContent="Gravity visualization intensity: "+gravityMass+"/10. Illustrative only."});
+$("presentBtn").onclick=async()=>{try{if(!document.fullscreenElement){await document.documentElement.requestFullscreen?.();$("presentBtn").classList.add("active")}else{await document.exitFullscreen?.();$("presentBtn").classList.remove("active")}}catch{$("jarvisText").textContent="Fullscreen is unavailable in this browser."}};
+$("shotBtn").onclick=()=>{try{const a=document.createElement("a");a.download="HoloModel-"+currentModel+".png";a.href=renderer.domElement.toDataURL("image/png");a.click();$("jarvisText").textContent="Screenshot created. Check your browser downloads."}catch(e){$("jarvisText").textContent="Screenshot failed; try after the 3D model finishes rendering."}};
+function smartScan(){
+ if(!modelGroup||!modelGroup.children.length){$("jarvisText").textContent="3D model is not ready to scan yet.";return}
+ const parts=[...new Set(modelGroup.children.map(o=>o.name).filter(Boolean))];
+ parts.forEach((name,i)=>{const obj=modelGroup.children.find(o=>o.name===name);if(obj&&obj.material?.emissive){obj.material.emissive.setHex(0x087bff);obj.material.emissiveIntensity=.95;setTimeout(()=>{if(obj.material){obj.material.emissiveIntensity=.65;obj.material.needsUpdate=true}},700+i*55)}});
+ const report="J.A.R.V.I.S. SMART SCAN\nModel: "+(names[currentModel]||currentModel)+"\nComponents detected: "+parts.length+"\nParts: "+parts.join(", ")+"\nModes: "+[wire?"Wireframe":"Solid",xray?"X-Ray ON":"X-Ray OFF",exploded?"Exploded":"Assembled"].join(" | ")+"\nNote: Conceptual educational 3D visualization; not a real engineering diagnostic.";
+ $("partName").textContent="SMART SCAN COMPLETE";$("partDesc").textContent=parts.length+" visible component types detected.";$("jarvisText").textContent=report;say("Smart scan complete. "+parts.length+" component types detected.");
+}
+function downloadLabReport(){
+ const parts=[...new Set((modelGroup?.children||[]).map(o=>o.name).filter(Boolean))];
+ const content=["HOLOMODEL | J.A.R.V.I.S. 3D LAB REPORT","Date: "+new Date().toLocaleString(),"Model: "+(names[currentModel]||currentModel),"Detected component types: "+parts.length,"Components: "+parts.join(", "),"Rotation: "+[root?.rotation.x,root?.rotation.y,root?.rotation.z].map(v=>Number(v||0).toFixed(2)).join(", "),"Zoom distance: "+Number(cameraDistance||0).toFixed(2),"Model position: "+[root?.position.x,root?.position.y,root?.position.z].map(v=>Number(v||0).toFixed(2)).join(", "),"Model scale: "+Number(root?.scale.x||1).toFixed(2),"Wireframe: "+wire,"X-Ray: "+xray,"Exploded: "+exploded,"Educational note: Models and readings are illustrative visualizations, not certified engineering analysis."].join("\n");
+ try{const a=document.createElement("a"),url=URL.createObjectURL(new Blob([content],{type:"text/plain;charset=utf-8"}));a.href=url;a.download="HoloModel-Lab-Report-"+currentModel+".txt";a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);$("jarvisText").textContent="Lab report prepared. Check your phone's Downloads."}catch(e){$("jarvisText").textContent="Report could not be downloaded in this browser."}
+}
+$("scanBtn").onclick=smartScan;$("reportBtn").onclick=downloadLabReport;
+const handCanvas=$("handOverlay"),handCtx=handCanvas.getContext("2d");
+const fingerLinks=[[0,1],[1,2],[2,3],[3,4],[0,5],[5,6],[6,7],[7,8],[5,9],[9,10],[10,11],[11,12],[9,13],[13,14],[14,15],[15,16],[13,17],[17,18],[18,19],[19,20],[0,17]];
+function paintHandLandmarks(hands){
+ const v=$("cameraPreview"),w=v.clientWidth||320,h=v.clientHeight||125,dpr=Math.min(window.devicePixelRatio||1,2);
+ if(handCanvas.width!==Math.round(w*dpr)||handCanvas.height!==Math.round(h*dpr)){handCanvas.width=Math.round(w*dpr);handCanvas.height=Math.round(h*dpr)}
+ handCtx.setTransform(dpr,0,0,dpr,0,0);handCtx.clearRect(0,0,w,h);
+ handCtx.save();handCtx.translate(w,0);handCtx.scale(-1,1);
+ hands.forEach(lm=>{
+  const p=lm.map(a=>({x:a.x*w,y:a.y*h}));
+  handCtx.lineCap="round";handCtx.lineJoin="round";handCtx.shadowColor="#1686ff";handCtx.shadowBlur=10;
+  handCtx.strokeStyle="rgba(25,217,255,.95)";handCtx.lineWidth=2;
+  fingerLinks.forEach(([a,b])=>{handCtx.beginPath();handCtx.moveTo(p[a].x,p[a].y);handCtx.lineTo(p[b].x,p[b].y);handCtx.stroke()});
+  p.forEach((q,i)=>{handCtx.beginPath();handCtx.arc(q.x,q.y,[4,8,12,16,20].includes(i)?3.6:2,0,Math.PI*2);handCtx.fillStyle=[4,8,12,16,20].includes(i)?"#ffffff":"#19d9ff";handCtx.fill();handCtx.strokeStyle="#1686ff";handCtx.lineWidth=1;handCtx.stroke()});
+ });
+ handCtx.restore();
+ // Draw the same live finger/joint skeleton over the full camera background.
+ const sc=$("stageHandOverlay"),sw=$('stage').clientWidth||320,sh=$('stage').clientHeight||240,sdpr=Math.min(window.devicePixelRatio||1,2),sctx=sc.getContext("2d");
+ if(sc.width!==Math.round(sw*sdpr)||sc.height!==Math.round(sh*sdpr)){sc.width=Math.round(sw*sdpr);sc.height=Math.round(sh*sdpr)}
+ sctx.setTransform(sdpr,0,0,sdpr,0,0);sctx.clearRect(0,0,sw,sh);sctx.save();sctx.translate(sw,0);sctx.scale(-1,1);
+ hands.forEach(lm=>{const p=lm.map(a=>({x:a.x*sw,y:a.y*sh}));sctx.lineCap="round";sctx.lineJoin="round";sctx.shadowColor="#19ffc5";sctx.shadowBlur=13;sctx.strokeStyle="rgba(25,255,197,.9)";sctx.lineWidth=Math.max(1.5,sw/260);fingerLinks.forEach(([a,b])=>{sctx.beginPath();sctx.moveTo(p[a].x,p[a].y);sctx.lineTo(p[b].x,p[b].y);sctx.stroke()});p.forEach((q,i)=>{sctx.beginPath();sctx.arc(q.x,q.y,[4,8,12,16,20].includes(i)?3.8:2.2,0,Math.PI*2);sctx.fillStyle=[4,8,12,16,20].includes(i)?"#fff":"#19ffc5";sctx.fill()})});sctx.restore();
+}
+async function startHandTracking(){
+ if(handEnabled){stopHandTracking();return}
+ if(!window.isSecureContext||!navigator.mediaDevices?.getUserMedia){$('handStatus').textContent="Camera needs a secure HTTPS page. Open the GitHub Pages link directly in Chrome (not an in-app preview), then allow Camera permission in Site settings.";return}
+ const btn=$('handBtn');btn.disabled=true;$('handStatus').textContent="Requesting camera permission…";
+ try{
+  // Try moderate resolution first, then a minimal camera request for older phones/browser drivers.
+  try{handStream=await navigator.mediaDevices.getUserMedia({audio:false,video:{facingMode:{ideal:"user"},width:{ideal:320},height:{ideal:240}}})}
+  catch(firstCameraError){console.warn("Preferred camera settings failed; retrying basic camera",firstCameraError);handStream=await navigator.mediaDevices.getUserMedia({audio:false,video:true})}
+  const video=$('cameraPreview'),stageVideo=$('stageCamera');video.srcObject=handStream;stageVideo.srcObject=handStream;$('cameraWrap').style.display='block';stageVideo.style.display='block';
+  await new Promise((resolve,reject)=>{if(video.readyState>=2&&stageVideo.readyState>=2){Promise.resolve(stageVideo.play()).then(resolve).catch(reject);return}const timer=setTimeout(()=>reject(new Error("Camera did not start. Check Chrome camera permission.")),10000);video.onloadedmetadata=()=>{clearTimeout(timer);Promise.all([video.play(),stageVideo.play()]).then(resolve).catch(reject)};});
+  $('handStatus').textContent="Camera ready. Loading finger-tracking model…";
+  const vision=await import("https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/+esm");
+  const fileset=await vision.FilesetResolver.forVisionTasks("https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm");
+  const options={baseOptions:{modelAssetPath:"https://storage.googleapis.com/mediapipe-models/hand_landmarker/hand_landmarker/float16/1/hand_landmarker.task",delegate:"GPU"},runningMode:"VIDEO",numHands:2,minHandDetectionConfidence:.42,minHandPresenceConfidence:.42,minTrackingConfidence:.42};
+  try{handLandmarker=await vision.HandLandmarker.createFromOptions(fileset,options)}catch(gpuError){console.warn("GPU hand tracking unavailable; trying CPU",gpuError);options.baseOptions.delegate="CPU";handLandmarker=await vision.HandLandmarker.createFromOptions(fileset,options)}
+  handEnabled=true;previousPalm=null;smoothedPalm=null;previousPinch=null;smoothedPinch=null;pinchActive=false;previousHandSpan=null;smoothedHandSpan=null;lastVideoTime=-1;lastDetectAt=0;
+  btn.textContent="✋ Stop Hand Tracking";btn.classList.add("active");$('handStatus').textContent="Tracking ready — show one or two hands";setStatus("Hand Tracking Active");handLoop();
+ }catch(err){console.error("Hand tracking start failed:",err);stopHandTracking();$('cameraWrap').style.display=handStream?'block':'none';$('handStatus').textContent="Could not start: "+(err?.message||"camera/model load failed")+". Open the GitHub Pages HTTPS link in Chrome, allow Camera in Site settings, close other camera apps, and check internet.";setStatus("Hand Tracking Error","#ff8a35")}
+ finally{btn.disabled=false}
+}
+function handLoop(){
+ if(!handEnabled||!handLandmarker)return;
+ const v=$("cameraPreview"),now=performance.now();
+ // Keep inference separate from rendering and cap it for mid-range Android phones.
+ if(v.readyState>=2&&v.currentTime!==lastVideoTime&&now-lastDetectAt>=75){
+  lastVideoTime=v.currentTime;lastDetectAt=now;
+  try{
+   const res=handLandmarker.detectForVideo(v,now),hands=res.landmarks||[];
+   paintHandLandmarks(hands);
+   if(hands.length){
+    const lm=hands[0];
+    const rawPalm={x:(lm[0].x+lm[5].x+lm[9].x+lm[13].x+lm[17].x)/5,y:(lm[0].y+lm[5].y+lm[9].y+lm[13].y+lm[17].y)/5};
+    const palmAlpha=.42;
+    const palm=smoothedPalm?{x:smoothedPalm.x+(rawPalm.x-smoothedPalm.x)*palmAlpha,y:smoothedPalm.y+(rawPalm.y-smoothedPalm.y)*palmAlpha}:rawPalm;
+    if(hands.length===1){
+     const dx=previousPalm?palm.x-previousPalm.x:0,dy=previousPalm?palm.y-previousPalm.y:0;
+     const dead=.0010;
+     if(previousPalm){
+      if(Math.abs(dx)>dead)targetRotY-=dx*4.6;
+      if(Math.abs(dy)>dead)targetRotX+=dy*4.6;
+     }
+     targetRotX=THREE.MathUtils.clamp(targetRotX,-1.45,1.45);
+     const palmSize=Math.max(.025,Math.hypot(lm[0].x-lm[9].x,lm[0].y-lm[9].y));
+     const pinchRatio=Math.hypot(lm[4].x-lm[8].x,lm[4].y-lm[8].y)/palmSize;
+     const isPinching=pinchActive?pinchRatio<.62:pinchRatio<.48;
+     if(isPinching){
+      if(!pinchActive){try{const sr=$('stage').getBoundingClientRect();pointer.x=(1-lm[8].x)*2-1;pointer.y=1-lm[8].y*2;raycaster.setFromCamera(pointer,camera);const hit=raycaster.intersectObjects(modelGroup.children,true).find(h=>h.object.visible);if(hit)chooseMeshPart(hit.object)}catch(selectErr){console.debug('Gesture selection skipped',selectErr)}}
+      if(gestureZoomMode!=="one"||gestureZoomStartSpan===null){
+       gestureZoomMode="one";gestureZoomStartSpan=pinchRatio;gestureZoomStartDistance=cameraDistance;
+      }else{
+       // Zoom from the pinch's starting distance, not tiny per-frame deltas.
+       setZoom(gestureZoomStartDistance-THREE.MathUtils.clamp((pinchRatio-gestureZoomStartSpan)*5.0,-5.5,5.5));
+      }
+      pinchActive=true;
+     }else{
+      if(gestureZoomMode==="one"){gestureZoomMode="";gestureZoomStartSpan=null}
+      pinchActive=false;
+     }
+     previousPinch=pinchRatio;smoothedPinch=pinchRatio;
+     previousHandSpan=null;smoothedHandSpan=null;previousTwoHandMid=null;
+     $("handStatus").textContent=isPinching?"One hand tracked • Pinch distance controls zoom":"One hand tracked • Move hand to rotate; pinch to zoom";
+     previousPalm=palm;smoothedPalm=palm;
+    }else{
+     const lm2=hands[1];
+     const p2={x:(lm2[0].x+lm2[5].x+lm2[9].x+lm2[13].x+lm2[17].x)/5,y:(lm2[0].y+lm2[5].y+lm2[9].y+lm2[13].y+lm2[17].y)/5};
+     const mid={x:(palm.x+p2.x)/2,y:(palm.y+p2.y)/2};
+     if(previousTwoHandMid){
+      const mx=mid.x-previousTwoHandMid.x,my=mid.y-previousTwoHandMid.y;
+      if(Math.abs(mx)>.0010)targetMoveX=THREE.MathUtils.clamp(targetMoveX-mx*4.5,-2.5,2.5);
+      if(Math.abs(my)>.0010)targetMoveY=THREE.MathUtils.clamp(targetMoveY+my*4.5,-2,2);
+     }
+     previousTwoHandMid=mid;
+     const a={x:(lm[0].x+lm[5].x+lm[9].x+lm[13].x+lm[17].x)/5,y:(lm[0].y+lm[5].y+lm[9].y+lm[13].y+lm[17].y)/5};
+     const b=p2,rawSpan=Math.hypot(a.x-b.x,a.y-b.y);
+     smoothedHandSpan=smoothedHandSpan===null?rawSpan:smoothedHandSpan+(rawSpan-smoothedHandSpan)*.38;
+     if(gestureZoomMode!=="two"||gestureZoomStartSpan===null){
+      gestureZoomMode="two";gestureZoomStartSpan=smoothedHandSpan;gestureZoomStartDistance=cameraDistance;
+     }else{
+      // Wider hand separation zooms in; bringing hands together zooms out.
+      setZoom(gestureZoomStartDistance-THREE.MathUtils.clamp((smoothedHandSpan-gestureZoomStartSpan)*8.0,-6,6));
+     }
+     previousHandSpan=smoothedHandSpan;previousPalm=palm;smoothedPalm=palm;
+     previousPinch=null;smoothedPinch=null;pinchActive=false;
+     $("handStatus").textContent="Two hands tracked • Move both to reposition; spread/together to zoom";
+    }
+   }else{
+    previousPalm=null;smoothedPalm=null;previousTwoHandMid=null;previousPinch=null;smoothedPinch=null;pinchActive=false;
+    previousHandSpan=null;smoothedHandSpan=null;gestureZoomStartSpan=null;gestureZoomMode="";
+    $("handStatus").textContent="Looking for hands… keep hands visible";
+   }
+  }catch(e){console.warn("Hand frame error",e);$("handStatus").textContent="Tracking hiccup — keep hands visible and try again"}
+ }
+ handRaf=requestAnimationFrame(handLoop)
+}
+function stopHandTracking(){
+ handEnabled=false;if(handRaf)cancelAnimationFrame(handRaf);handRaf=0;previousPalm=null;smoothedPalm=null;previousTwoHandMid=null;previousPinch=null;smoothedPinch=null;pinchActive=false;previousHandSpan=null;smoothedHandSpan=null;gestureZoomStartSpan=null;gestureZoomMode="";lastDetectAt=0;
+ if(handStream){handStream.getTracks().forEach(t=>t.stop());handStream=null}
+ const v=$("cameraPreview"),sv=$("stageCamera");v.pause();v.srcObject=null;sv.pause();sv.srcObject=null;sv.style.display="none";$("cameraWrap").style.display="none";handCtx.clearRect(0,0,handCanvas.width,handCanvas.height);const sc=$("stageHandOverlay");sc.getContext("2d").clearRect(0,0,sc.width,sc.height);
+ if(handLandmarker){try{handLandmarker.close()}catch{}handLandmarker=null}
+ $("handBtn").textContent="✋ Start Hand Tracking";$("handBtn").classList.remove("active");$("handStatus").textContent="Not started";
+ if(renderer)setStatus("3D Engine Ready")
+}
+$("handBtn").onclick=startHandTracking;
+// UNIVERSAL MODEL SEARCH: public GitHub repository tree search needs no embedded API key.
+function umsStatus(msg,isError=false){const el=$("umsStatus");if(el){el.textContent=msg;el.style.color=isError?"#ffad75":"#9cefff"}}
+function umsSafeModelUrl(raw){try{const u=new URL(String(raw||"").trim());if(u.protocol!=="https:")return null;if(!/\.(glb|gltf)$/i.test(u.pathname))return null;return u.href}catch{return null}}
+function umsEscape(s){return String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
+function umsRenderResults(items){const host=$("umsResults");host.replaceChildren();if(!items.length){host.textContent="No direct GLB/GLTF files matched. Try a broader query, or paste a direct model URL.";return}for(const item of items){umsResultsCache.set(item.id,item);const card=document.createElement("article");card.className="umsCard";const title=document.createElement("strong");title.textContent=item.title;const meta=document.createElement("small");meta.textContent=`${item.format.toUpperCase()} • ${item.repo||"Direct URL"}${item.license?" • License: "+item.license:" • Check licence before reuse"}`;const btns=document.createElement("div");btns.className="umsBtns";const load=document.createElement("button");load.type="button";load.textContent="Load in Lab";load.onclick=()=>umsLoadModel(item.url,false,item.title);const add=document.createElement("button");add.type="button";add.textContent="＋ Add to Scene";add.onclick=()=>umsLoadModel(item.url,true,item.title);const source=document.createElement("button");source.type="button";source.textContent="Source ↗";source.onclick=()=>window.open(item.source||item.url,"_blank","noopener,noreferrer");btns.append(load,add,source);card.append(title,meta,btns);host.append(card)}}
+async function umsSearchModels(){const q=$("umsSearch").value.trim();if(!q){umsStatus("Pehle model ka naam likho, jaise robot arm ya jet engine.",true);return}const btn=$("umsSearchBtn");btn.disabled=true;btn.textContent="Searching…";umsStatus("Searching public GitHub repositories for GLB/GLTF files…");const words=q.toLowerCase().split(/[^a-z0-9]+/).filter(w=>w.length>2);const found=[];const seen=new Set();try{const searchUrl="https://api.github.com/search/repositories?per_page=8&sort=stars&q="+encodeURIComponent(q+" 3d model");const sr=await fetch(searchUrl,{headers:{Accept:"application/vnd.github+json"}});if(!sr.ok)throw new Error(sr.status===403?"GitHub rate limit reached; wait a minute or use a direct GLB URL.":"GitHub search HTTP "+sr.status);const data=await sr.json();const repos=(data.items||[]).slice(0,8);for(const repo of repos){if(found.length>=18)break;try{const branch=repo.default_branch||"main";const tr=await fetch(`https://api.github.com/repos/${repo.full_name}/git/trees/${encodeURIComponent(branch)}?recursive=1`,{headers:{Accept:"application/vnd.github+json"}});if(!tr.ok)continue;const tree=await tr.json();for(const f of (tree.tree||[])){if(f.type!=="blob"||!/\.(glb|gltf)$/i.test(f.path)||!f.size||f.size>25000000)continue;const lower=f.path.toLowerCase();const score=words.reduce((n,w)=>n+(lower.includes(w)?3:0),0)+(lower.endsWith(".glb")?1:0);if(words.length&&score<1)continue;const raw=`https://raw.githubusercontent.com/${repo.full_name}/${encodeURIComponent(branch)}/${f.path.split("/").map(encodeURIComponent).join("/")}`;if(seen.has(raw))continue;seen.add(raw);found.push({id:"gh-"+found.length,title:f.path.split("/").pop(),url:raw,format:f.path.toLowerCase().endsWith(".glb")?"glb":"gltf",repo:repo.full_name,license:repo.license?.spdx_id||"unknown",source:f.html_url||`https://github.com/${repo.full_name}/tree/${branch}`});if(found.length>=18)break}}catch(e){console.warn("repo scan skipped",repo.full_name,e)}}}catch(e){umsStatus((e?.message||"Search failed")+". A direct URL can still be loaded.",true)}finally{btn.disabled=false;btn.textContent="Search Models"}umsRenderResults(found);if(found.length)umsStatus(`Found ${found.length} candidate model file(s). Choose Load in Lab to replace the current model, or Add to Scene to keep several models together. Verify each model's licence and source.`);else if(!$("umsStatus").textContent.toLowerCase().includes("rate limit")&&!$("umsStatus").textContent.toLowerCase().includes("failed"))umsStatus("No matching public files found. Try a broader term or use a direct HTTPS GLB/GLTF URL.",true)}
+function umsPrepareScene(){if(!GLTFLoaderClass)throw new Error("GLTFLoader is not ready yet; reload the page if this persists.");return new GLTFLoaderClass()}
+function umsFitObject(group,offsetX=0,scaleFactor=1){const box=new THREE.Box3().setFromObject(group);if(box.isEmpty())throw new Error("This file contains no visible 3D geometry.");const center=box.getCenter(new THREE.Vector3());const size=box.getSize(new THREE.Vector3());const maxDim=Math.max(size.x,size.y,size.z)||1;group.position.sub(center);group.scale.setScalar((3.1/maxDim)*scaleFactor);group.position.x+=offsetX;group.traverse(o=>{if(o.isMesh){o.userData.twinCategory=o.parent?.name||o.name||"Imported Component";o.userData.twinLabel=o.name||o.userData.twinCategory;o.userData.twinId="online-"+Math.random().toString(36).slice(2,9);if(o.material){const mats=Array.isArray(o.material)?o.material:[o.material];for(const m of mats){if(m.color&&m.color.r+m.color.g+m.color.b<.12)m.color.set(0x72dfff);m.needsUpdate=true}}}})}
+function umsLoadModel(url,add,title="Online 3D Model"){const safe=umsSafeModelUrl(url);if(!safe){umsStatus("Security check: sirf direct HTTPS .glb ya .gltf URL allowed hai.",true);return}const btns=Array.from(document.querySelectorAll("#umsResults button"));btns.forEach(b=>b.disabled=true);umsStatus("Downloading and parsing model… large files can take time on mobile.");let loader;try{loader=umsPrepareScene()}catch(e){umsStatus(e.message,true);btns.forEach(b=>b.disabled=false);return}loader.load(safe,gltf=>{try{const group=new THREE.Group();group.name="Online: "+title;group.add(gltf.scene||gltf.scenes?.[0]);if(!add){clearModel();for(const g of umsLoadedGroups.splice(0)){}currentModel="online";root.rotation.set(0,0,0);root.position.set(0,0,0);smoothRotX=targetRotX=smoothRotY=targetRotY=0;cameraDistance=7.5;camera.position.set(0,0,cameraDistance);twinPartCounter=0;twinSelectedObject=null;$("stageTitle").textContent=title;$("stageInfo").textContent="Imported online model • drag to rotate • select parts below";$("partName").textContent=title;$("partDesc").textContent="Imported GLB/GLTF model. Part names and hidden engineering data depend on the source asset.";$("jarvisText").textContent="Online model loaded. I can inspect visible mesh names; accuracy and licensing depend on the source file."}const existing=umsLoadedGroups.length;umsFitObject(group,add?(existing%3-1)*2.25:0,add?.72:1);modelGroup.add(group);umsLoadedGroups.push(group);applyModes();renderTwinTree($("twinSearch")?.value||"");renderTwinInfo(null);rebuildPartCallouts();$("loading").style.display="none";setStatus("Online Model Ready");umsStatus(`Loaded “${title}”. ${add?"Added alongside the current scene.":"Loaded as the active model."} Meshes: ${group.getObjectByProperty("type","Mesh")?"available":"checking"}. If it does not appear, the file may use unsupported external textures or CORS.`)}catch(e){console.error(e);umsStatus("Model parsed but could not be fitted: "+(e?.message||e),true)}finally{btns.forEach(b=>b.disabled=false)}},undefined,err=>{console.error("GLTF load failed",err);umsStatus("Could not load this file. Common causes: CORS blocked, broken URL, missing external .gltf textures/buffers, unsupported file, or slow network. Try a self-contained GLB URL.",true);btns.forEach(b=>b.disabled=false)})}
+$("umsSearchBtn").addEventListener("click",umsSearchModels);$("umsSearch").addEventListener("keydown",e=>{if(e.key==="Enter")umsSearchModels()});$("umsUrlLoad").addEventListener("click",()=>{const u=umsSafeModelUrl($("umsUrl").value);if(!u){umsStatus("Paste a direct HTTPS URL ending in .glb or .gltf (not a web page link).",true);return}const title=decodeURIComponent(new URL(u).pathname.split("/").pop()||"Online Model");umsLoadModel(u,false,title)});$("umsOpenSketchfab").addEventListener("click",()=>{const q=$("umsSearch").value.trim();if(!q){umsStatus("Search term enter karo pehle.",true);return}window.open("https://sketchfab.com/search?type=models&q="+encodeURIComponent(q),"_blank","noopener,noreferrer")});$("umsClearOnline").addEventListener("click",()=>{for(const g of umsLoadedGroups){g.parent?.remove(g);g.traverse(o=>{if(o.geometry)o.geometry.dispose();if(o.material){if(Array.isArray(o.material))o.material.forEach(m=>m.dispose());else o.material.dispose()}})}umsLoadedGroups.length=0;loadModel("reactor");umsStatus("Online models cleared. Arc Reactor restored.")});
+
+async function init(){
+try{
+$("loadingMsg").textContent="Loading Three.js from CDN…";
+THREE=await import("https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js");
+const gltfModule=await import("https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/loaders/GLTFLoader.js");GLTFLoaderClass=gltfModule.GLTFLoader;
+scene=new THREE.Scene();scene.background=null;
+camera=new THREE.PerspectiveCamera(42,1,.1,100);camera.position.set(0,0,cameraDistance);
+renderer=new THREE.WebGLRenderer({antialias:false,alpha:true,powerPreference:"high-performance"});
+renderer.setPixelRatio(Math.min(window.devicePixelRatio||1,1.5));renderer.outputColorSpace=THREE.SRGBColorSpace;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.25;stage.insertBefore(renderer.domElement,$("stageTitle"));
+scene.add(new THREE.AmbientLight(0x8bdfff,1.35));let l=new THREE.PointLight(0x13aaff,55,30);l.position.set(4,4,6);scene.add(l);let w=new THREE.PointLight(0xff772b,24,20);w.position.set(-4,1,3);scene.add(w);
+root=new THREE.Group();scene.add(root);modelGroup=new THREE.Group();root.add(modelGroup);raycaster=new THREE.Raycaster();pointer=new THREE.Vector2();
+installPointer();loadModel("reactor");resize();new ResizeObserver(resize).observe(stage);window.addEventListener("resize",resize);
+$("loading").style.display="none";setStatus("3D Engine Ready");
+function animate(){requestAnimationFrame(animate);
+ const now=performance.now(),dt=lastAnimTime?Math.min((now-lastAnimTime)/16.667,2.5):1;lastAnimTime=now;
+ const rotEase=1-Math.pow(.70,dt),moveEase=1-Math.pow(.72,dt);
+ smoothRotX+=(targetRotX-smoothRotX)*rotEase;smoothRotY+=(targetRotY-smoothRotY)*rotEase;
+ smoothMoveX+=(targetMoveX-smoothMoveX)*moveEase;smoothMoveY+=(targetMoveY-smoothMoveY)*moveEase;
+ root.rotation.x=smoothRotX;root.rotation.y=smoothRotY;
+ root.position.x=smoothMoveX;root.position.y=smoothMoveY;
+ if(autoRotate&&!dragging&&!handEnabled&&!exploded)root.rotation.y+=.0018*dt;
+ if(currentModel==="jet")modelGroup.children.forEach(o=>{if(o.name==="Turbine Blade")o.rotation.z+=.003+(engineRPM/100)*.035});
+ if(currentModel==="space"||currentModel==="gravity")modelGroup.children.forEach(o=>{if(o.name==="Satellite"&&o.userData.orbitSeed!==undefined){const t=performance.now()*.00025*(1+o.userData.orbitSeed*.08),r=currentModel==="space"?(.6+(o.userData.orbitSeed%4)*.4):1.35;o.position.x=Math.cos(t+o.userData.orbitSeed)*r;o.position.y=Math.sin(t+o.userData.orbitSeed)*r*(currentModel==="gravity"?.78:1)}});
+ if(wakePulse>0){wakePulse=Math.max(0,wakePulse-.025);const pulse=1+Math.sin((1-wakePulse)*Math.PI*8)*.012;modelGroup.scale.setScalar(pulse)}
+ else modelGroup.scale.setScalar(1);
+ modelGroup.children.forEach(o=>{if(o.userData.targetPosition)o.position.lerp(o.userData.targetPosition,.10)});renderer.render(scene,camera);updatePartCalloutPositions()}animate();
+}catch(err){console.error("3D init:",err);showError("3D Engine Load Failed","Internet/CDN/WebGL check karein. Page reload karein. Details: "+(err?.message||"unknown error"))}
+}
+window.addEventListener("beforeunload",stopHandTracking);
+init();
+</script>
+</body></html>
